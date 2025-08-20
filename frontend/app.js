@@ -16,14 +16,16 @@
   async function fetchMetadata(q){ const body=JSON.stringify({query:q}); const r=await fetch(`${API_BASE}/spotify-metadata`,{method:'POST',headers:{'Content-Type':'application/json'},body}); const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.error||'Lookup failed'); return j.data; }
   async function fetchPreview(q,progressTime){
     const r=await fetch(`${API_BASE}/preview-plaque`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,progressTime})});
-    const t=await r.text();
-    const trimmed=t.trimStart();
-    const isSvg=trimmed.startsWith('<?xml')||trimmed.startsWith('<svg');
-    if(!r.ok || !isSvg){
-      console.warn('Preview response not SVG:', { status:r.status, preview:t.slice(0,120) });
-      throw new Error(`Preview failed${r.status?` (HTTP ${r.status})`:''}`);
+    const ct=r.headers.get('content-type')||'';
+    const raw=await r.text();
+    const trimmed=raw.trimStart();
+    const isSvg=/<svg[\s>]/i.test(trimmed);
+    if(isSvg && r.ok) return raw;
+    if(ct.includes('application/json')){
+      try { const j=JSON.parse(raw); throw new Error(j.error||'Preview error'); } catch(e){ throw new Error(e.message||'Preview failed'); }
     }
-    return t;
+    console.warn('Unexpected preview payload', { status:r.status, head:raw.slice(0,150) });
+    throw new Error(`Preview failed${r.status?` (HTTP ${r.status})`:''}`);
   }
   function renderSvg(svg){ const stage=els.stage(); if(!svg){stage.innerHTML='<div class="placeholder">No preview</div>';return;} stage.innerHTML=svg; stage.classList.add('fade'); setTimeout(()=>stage.classList.remove('fade'),380); }
   function showSkeleton(){ els.stage().innerHTML='<div class="skeleton"></div>'; }

@@ -34,6 +34,7 @@ input::placeholder{color:#9aa8b2}
 .status.small{min-height:34px}
 .status[data-state=error]{background:#ffe8ec;border-color:#ffcbd3;color:#c23d4d}
 .meta-line{font-size:.65rem;letter-spacing:.45px;color:#60788b;min-height:18px}
+.hint{font-size:.55rem;letter-spacing:.4px;color:#6d7f8c;margin-top:-6px;margin-bottom:2px;line-height:1.4}
 /* Preview */
 .preview-stage{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:24px 20px;min-height:420px;box-shadow:var(--shadow);overflow:auto;margin-top:4px}
 .preview-stage svg{max-width:100%;display:block;margin:0 auto}
