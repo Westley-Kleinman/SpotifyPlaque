@@ -21,13 +21,20 @@
     <script>document.documentElement.classList.remove('no-js');</script>
 </head>
 <body>
-    <header>
-        <div class="top">
-            <a class="logo" href="#" aria-label="Custom Spotify Plaque home">
-                <div class="logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" aria-label="Logo"><path d="M8 5.5c0-.5.4-.9.9-.9h6.2c.5 0 .9.4.9.9v12.9a.9.9 0 0 1-1.4.8l-3.2-2.1-3.2 2.1a.9.9 0 0 1-1.4-.8V5.5Z"/></svg></div>
-                <span>Custom Spotify Plaque</span>
-            </a>
-        </div>
+        <header>
+            <div class="site-bar">
+                <div class="site-left">
+                    <a class="logo" href="#" aria-label="Custom Spotify Plaque home">
+                        <div class="logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" aria-label="Logo"><path d="M8 5.5c0-.5.4-.9.9-.9h6.2c.5 0 .9.4.9.9v12.9a.9.9 0 0 1-1.4.8l-3.2-2.1-3.2 2.1a.9.9 0 0 1-1.4-.8V5.5Z"/></svg></div>
+                        <span>Custom Spotify Plaque</span>
+                    </a>
+                </div>
+                <nav aria-label="Primary" class="site-nav">
+                    <a href="#designerCard" class="nav-link">Designer</a>
+                    <a href="#order" class="nav-link">Order</a>
+                    <a href="#benefitsHeading" class="nav-link">Details</a>
+                </nav>
+            </div>
         <div class="hero">
             <div>
                 <h1 class="headline">Your song. Your moment. Minimal laser plaque.</h1>
@@ -68,7 +75,7 @@
         </div>
     </header>
 
-    <section class="split" aria-label="Order">
+        <section class="split" aria-label="Order" id="order">
         <div class="order-card">
             <h2 class="eyebrow" id="orderHeading">Order Your Plaque</h2>
             <p class="body-sm" aria-describedby="orderHeading">One standard size plaque. We engrave exactly what you preview (album art outline only). Provide your details to place a production order.</p>
@@ -103,9 +110,10 @@
         </div>
     </section>
 
-    <footer>
-        &copy; <span id="year"></span> Custom Spotify Plaque • Red = cut • Black = engrave • Educational / personal use only.
-    </footer>
+        <footer>
+            &copy; <span id="year"></span> Custom Spotify Plaque • Red = cut • Black = engrave • <span id="buildInfo" aria-label="Build info"></span>
+        </footer>
+        <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
     <script src="app.js" defer></script>
 </body>
