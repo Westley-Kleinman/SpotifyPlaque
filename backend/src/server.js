@@ -9,6 +9,7 @@ const express = require('express');
 const path = require('path');
 const { fetchSpotifyMetadata, fetchSpotifyMetadataFlexible } = require('./spotifyMetadata');
 const { generateSpotifyPlaqueSVG, generateDetailedPlaqueSVG } = require('./svgGenerator');
+const { products, discounts } = require('./products');
 
 const app = express();
 // Allow port override by CLI arg: `node src/server.js 3010`
@@ -16,6 +17,8 @@ const PORT = process.env.PORT || process.argv[2] || 3001;
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
+// basic in-memory order store (ephemeral)
+const orders = [];
 
 // Static frontend (serve index.html UI for testing at http://localhost:PORT/)
 const frontendDir = path.join(__dirname, '../../frontend');
@@ -60,6 +63,62 @@ app.get('/api/version', (req, res) => {
     port: PORT
   });
 });
+
+// --- Ecommerce endpoints ---
+app.get('/api/products', (req, res) => {
+  res.json({ products });
+});
+
+// Price calculation utility
+function calcPrice(selection){
+  const base = products[0];
+  let price = base.basePrice;
+  if(selection){
+    const { size, material, stand } = selection;
+    const opt = base.options;
+    const add = (group, id) => {
+      if(!id) return; const found = opt[group].find(o=>o.id===id); if(found) price += found.priceDelta;
+    };
+    add('size', size); add('material', material); add('stand', stand);
+  }
+  return parseFloat(price.toFixed(2));
+}
+
+function applyDiscounts(subtotal, codes){
+  let total = subtotal; let applied = [];
+  (codes||[]).forEach(code=>{
+    const d = discounts.find(d=>d.code.toUpperCase()===code.toUpperCase());
+    if(d){
+      if(d.percent){ total = total * (1 - d.percent/100); }
+      else if(d.amount){ total = Math.max(0, total - d.amount); }
+      applied.push({ code: d.code, description: d.description });
+    }
+  });
+  return { total: parseFloat(total.toFixed(2)), applied };
+}
+
+app.post('/api/price-estimate', (req,res)=>{
+  try {
+    const { selection, codes } = req.body || {}; 
+    const basePrice = calcPrice(selection);
+    const { total, applied } = applyDiscounts(basePrice, codes);
+    res.json({ success:true, basePrice, total, discounts: applied });
+  } catch(e){ res.status(400).json({ success:false, error: e.message }); }
+});
+
+app.post('/api/checkout', (req,res)=>{
+  try {
+    const { customer, selection, codes, track } = req.body || {};
+    if(!customer || !customer.email) return res.status(400).json({ success:false, error:'Missing customer.email' });
+    const basePrice = calcPrice(selection);
+    const { total, applied } = applyDiscounts(basePrice, codes);
+    const order = { id: 'ord_'+Date.now().toString(36), created: new Date().toISOString(), basePrice, total, discounts: applied, selection, track, customer };
+    orders.push(order);
+    res.json({ success:true, order });
+  } catch(e){ res.status(400).json({ success:false, error:e.message }); }
+});
+
+app.get('/api/orders', (req,res)=>{ res.json({ count: orders.length, orders }); });
 
 /**
  * Spotify metadata endpoint
