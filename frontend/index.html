@@ -15,22 +15,6 @@
     <header class="site-header">
         <h1 class="site-title">Song Plaque</h1>
         <p class="tagline">Minimal laser engraving • Black = engrave • Red = cut outline</p>
-                <div class="config-bar" id="configBar">
-                        <details>
-                            <summary>Connection Settings</summary>
-                            <div class="config-body">
-                                <label for="apiEndpoint" class="lbl">API Endpoint</label>
-                                <input id="apiEndpoint" type="text" placeholder="https://your-backend.onrender.com/api" spellcheck="false" />
-                                <div class="btn-row small-gap">
-                                    <button class="btn secondary" id="saveApiBtn" type="button">Save API</button>
-                                    <button class="btn secondary" id="testApiBtn" type="button">Test</button>
-                                    <button class="btn secondary" id="clearApiBtn" type="button">Clear</button>
-                                </div>
-                                <div class="status small" id="apiStatus" aria-live="polite">Not tested</div>
-                                <p class="config-hint">If this site is hosted on GitHub Pages you must point to a running backend (Render, Railway, etc.). Paste the backend base URL ending with /api.</p>
-                            </div>
-                        </details>
-                </div>
     </header>
     <main class="layout" aria-label="Plaque designer">
         <section class="stack" aria-labelledby="designHeading">
