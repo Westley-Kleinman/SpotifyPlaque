@@ -1,7 +1,22 @@
 // Frontend application logic separated from HTML for maintainability
 (function(){
   'use strict';
-  const API_BASE = (()=>{ try { const o=location.origin||''; if(!/^https?:/i.test(o)) return 'http://localhost:3001/api'; return o.replace(/\/$/,'')+'/api'; } catch { return 'http://localhost:3001/api'; } })();
+  // Configure your Render.com backend URL here
+  const RENDER_API_URL = 'https://spotifyplaque.onrender.com/api'; // Your actual Render URL
+  const API_BASE = (()=>{ 
+    // If RENDER_API_URL is configured (not the placeholder), use it
+    if(RENDER_API_URL && !RENDER_API_URL.includes('your-app-name')) {
+      return RENDER_API_URL;
+    }
+    // Otherwise detect from current location
+    try { 
+      const o=location.origin||''; 
+      if(!/^https?:/i.test(o)) return 'http://localhost:3001/api'; 
+      return o.replace(/\/$/,'')+'/api'; 
+    } catch { 
+      return 'http://localhost:3001/api'; 
+    } 
+  })();
   const qs=id=>document.getElementById(id);
   const els={ song:()=>qs('songInput'), knob:()=>qs('progressKnob'), bar:()=>qs('progressBar'), fill:()=>qs('progressFill'), cur:()=>qs('currentTime'), total:()=>qs('totalTime'), hidden:()=>qs('progressTime'), previewBtn:()=>qs('previewBtn'), downloadBtn:()=>qs('downloadBtn'), stage:()=>qs('previewStage'), status:()=>qs('statusBox'), meta:()=>qs('metaLine'), orderBtn:()=>qs('orderBtn'), orderStatus:()=>qs('orderStatus'), name:()=>qs('custName'), email:()=>qs('custEmail'), notes:()=>qs('custNotes') };
   let trackDurationSec=0,currentSec=0,dragging=false,lastSvg='',lastMeta=null,debounceId,isLoading=false;
