@@ -188,13 +188,18 @@
         .time-display { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; color: var(--slate-500); margin-top: 0.5rem; }
         
         .preview-stage {
-            background-color: var(--slate-100);
-            border: 1px dashed var(--slate-300);
+            background-color: #2d3748;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 25px 25px;
+            border: 1px solid #4A5568;
             border-radius: var(--radius-lg);
             min-height: 300px;
             display: grid;
             place-items: center;
             padding: 1rem;
+            transition: background-color 0.3s;
         }
         .preview-stage svg { max-width: 100%; height: auto; }
         .placeholder { font-size: 0.9rem; color: var(--slate-500); }

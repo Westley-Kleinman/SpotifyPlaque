@@ -252,7 +252,7 @@ app.post('/api/preview-plaque', async (req, res) => {
       const dt = (dm||0)*60 + (ds||0);
       if (dt>0) progressPosition = Math.min(pt/dt,1);
     }
-  const svg = generateSpotifyPlaqueSVG(metadata, { progressPosition, embedImage:true });
+  const svg = generateSpotifyPlaqueSVG(metadata, { progressPosition, embedImage:true, isPreview: true });
     res.setHeader('Content-Type','image/svg+xml');
     res.send(svg);
   } catch (e) {

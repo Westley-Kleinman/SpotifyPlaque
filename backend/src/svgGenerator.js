@@ -32,10 +32,18 @@ node -e "console.log(process.env.SPOTIFY_CLIENT_ID ? 'CLIENT_ID set' : 'CLIENT_I
  * @returns {string} - SVG content ready for laser cutting
  */
 function generateSpotifyPlaqueSVG(metadata, options = {}) {
-  const { progressPosition = 0.4, embedImage = false, omitAlbum = false } = options;
+  const { progressPosition = 0.4, embedImage = false, omitAlbum = false, isPreview = false } = options;
   const title = escapeXML(metadata.title || 'Unknown Track');
   const artist = escapeXML(metadata.artist || 'Unknown Artist');
   const duration = metadata.duration || '0:00';
+
+  // --- Color Palette ---
+  // When isPreview is true, we simulate the look of a clear plaque against a dark background.
+  // Engraved parts become light, and the plaque itself is transparent.
+  const engraveFill = isPreview ? '#E5E7EB' : '#000000'; // Light gray for preview, black for final cut file
+  const lightFill = isPreview ? '#4A5568' : '#f1f2f2';   // A darker gray for contrast elements in preview
+  const plaqueFill = 'transparent';                       // Plaque is always transparent
+  const plaqueStroke = isPreview ? 'rgba(255,255,255,0.2)' : '#000000'; // Faint outline in preview, black for final
 
   // Time calculation based on progress
   const [m, s] = duration.split(':').map(Number);
@@ -108,15 +116,15 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   <defs>
     <style>
       /* White (non-engrave) areas / placeholders */
-      .cls-1 { fill: #ffffff; stroke-width: .4px; stroke: #000000; stroke-miterlimit:10; }
+      .cls-1 { fill: ${plaqueFill}; stroke-width: .4px; stroke: ${plaqueStroke}; stroke-miterlimit:10; }
       /* Light (non-engrave) interior fill (e.g., play triangle contrast) */
-      .light-fill { fill:#f1f2f2; stroke:none; }
+      .light-fill { fill:${lightFill}; stroke:none; }
       /* Engrave: every solid dark element to be raster engraved */
-      .engrave { fill:#000000; stroke:none; }
+      .engrave { fill:${engraveFill}; stroke:none; }
       /* Red cutting outline for perimeter */
       .cut-outline { fill:none; stroke:#ff0000; stroke-width:0.1mm; }
       /* Text (engrave) */
-      .dyn-text { fill:#000000; stroke:none; font-family: Arial, sans-serif; }
+      .dyn-text { fill:${engraveFill}; stroke:none; font-family: Arial, sans-serif; }
       .dyn-title { font-size:34px; font-weight:900; font-family:'Arial Black','Helvetica Neue',Arial,sans-serif; letter-spacing:-1px; font-stretch:condensed; }
       .dyn-artist { font-size:20px; font-weight:600; font-family:Arial,'Helvetica Neue',Arial,sans-serif; letter-spacing:0; }
       .dyn-time { font-size:24px; font-weight:500; font-family:Arial,'Helvetica Neue',Arial,sans-serif; text-anchor:start; letter-spacing:0; }
