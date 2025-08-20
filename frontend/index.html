@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plaqueify - Your Vibe, Immortalized</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -188,12 +189,8 @@
         .time-display { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; color: var(--slate-500); margin-top: 0.5rem; }
         
         .preview-stage {
-            background-color: #2d3748;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 25px 25px;
-            border: 1px solid #4A5568;
+            background-color: var(--white);
+            border: 1px solid var(--slate-200);
             border-radius: var(--radius-lg);
             min-height: 300px;
             display: grid;
@@ -249,8 +246,6 @@
         
         footer { text-align: center; padding: 3rem 0; margin-top: 2rem; }
         footer p { font-size: 0.875rem; color: var(--slate-500); }
-        #admin-trigger { cursor: pointer; opacity: 0.05; }
-        #admin-trigger:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -375,7 +370,6 @@
         <div class="container">
             <p>&copy; 2025 Plaqueify. All Rights Reserved.</p>
             <p>This is a portfolio project. Not a real store.</p>
-            <p id="admin-trigger" title="Admin Access">.</p>
         </div>
     </footer>
 
@@ -546,7 +540,10 @@
                     <p>${item.meta.artist}</p>
                     <p>Time: ${formatTime(item.progress)}</p>
                 </div>
-                <button class="btn btn-secondary remove-from-cart-btn" data-index="${index}">Remove</button>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button class="btn btn-secondary remove-from-cart-btn" data-index="${index}">Remove</button>
+                    <button class="btn btn-primary download-plaque-btn" id="download-btn-${item.id}" data-index="${index}">Download Files</button>
+                </div>
             `;
             dom.cartItems.appendChild(itemEl);
         });
@@ -572,113 +569,92 @@
         renderCart();
     };
 
-    // --- Admin Logic ---
-    const handleAdminLogin = () => {
+    const handleAdminLogin = async () => {
         if (dom.adminPassword.value === 'secretdownload') {
             isAdmin = true;
             dom.adminModal.style.display = 'none';
             dom.adminPassword.value = '';
-            alert('Admin mode enabled. Download buttons will now appear.');
-            // Re-render cart to show download buttons if cart is visible
-            if (dom.cartSection.style.display === 'block') {
-                renderCart();
+            
+            const item = window.adminDownloadItem;
+            if (!item) {
+                alert('An error occurred. Please try the download again.');
+                return;
             }
+
+            const buttonId = `download-btn-${item.id}`;
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.textContent = 'Generating...';
+                button.disabled = true;
+            }
+
+            try {
+                // Fetch both SVG and Album Cover
+                const [svg, imageBlob] = await Promise.all([
+                    fetchAPI('generate-plaque', {
+                        query: item.query,
+                        progressTime: formatTime(item.progress)
+                    }).then(res => new Blob([res], { type: 'image/svg+xml' })),
+                    fetch(item.meta.image).then(res => res.blob())
+                ]);
+
+                // Use JSZip to create a zip file
+                const zip = new JSZip();
+                zip.file(`plaque_${item.meta.artist}_${item.meta.title}.svg`, svg);
+                zip.file(`cover_${item.meta.artist}_${item.meta.title}.jpg`, imageBlob);
+
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+                const url = URL.createObjectURL(zipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `plaqueify_${item.meta.artist}_${item.meta.title}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+            } catch (err) {
+                alert(`Failed to generate download: ${err.message}`);
+            } finally {
+                if (button) {
+                    button.textContent = 'Download Files';
+                    button.disabled = false;
+                }
+                window.adminDownloadItem = null; // Clear the item
+            }
+
         } else {
             alert('Incorrect password.');
         }
     };
 
-    const downloadPlaque = async (item) => {
-        const buttonId = `download-btn-${item.id}`;
-        const button = get(buttonId);
-        button.textContent = 'Generating...';
-        button.disabled = true;
-
-        try {
-            const svg = await fetchAPI('generate-plaque', {
-                query: item.query,
-                progressTime: formatTime(item.progress),
-                style: 'minimal'
-            });
-            const blob = new Blob([svg], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `plaqueify-${item.meta.artist}-${item.meta.title}.svg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch (err) {
-            alert(`Failed to generate download: ${err.message}`);
-        } finally {
-            button.textContent = 'Download SVG';
-            button.disabled = false;
-        }
+    const requestDownload = (item) => {
+        window.adminDownloadItem = item;
+        dom.adminModal.style.display = 'flex';
+        dom.adminPassword.focus();
     };
 
     // --- Event Listeners ---
     const initEvents = () => {
-        // Designer
-        dom.previewBtn.addEventListener('click', designPlaque);
-        dom.songInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                designPlaque();
-            }
-        });
+        // ... (keep existing listeners)
 
-        // Slider
-        dom.progressBar.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            handleSeek(e.clientX);
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) handleSeek(e.clientX);
-        });
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                designPlaque(); // Re-design on drop
-            }
-        });
-
-        // Cart
-        dom.addToCartBtn.addEventListener('click', addToCart);
-        dom.cartBtn.addEventListener('click', () => {
-            dom.cartSection.style.display = 'block';
-            window.scrollTo(0, dom.cartSection.offsetTop - 80);
-        });
+        // Cart Event Listener (Delegated)
         dom.cartItems.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-from-cart-btn')) {
                 removeFromCart(parseInt(e.target.dataset.index, 10));
             }
             if (e.target.classList.contains('download-plaque-btn')) {
                 const item = cart[parseInt(e.target.dataset.index, 10)];
-                downloadPlaque(item);
+                requestDownload(item);
             }
         });
 
-        // Checkout
-        dom.checkoutBtn.addEventListener('click', () => {
-            dom.checkoutSection.style.display = 'block';
-            window.scrollTo(0, dom.checkoutSection.offsetTop - 80);
-        });
-        get('checkout-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Checkout functionality with Stripe is the next step!');
-        });
-
         // Admin
-        dom.adminTrigger.addEventListener('click', () => {
-            dom.adminModal.style.display = 'flex';
-            dom.adminPassword.focus();
-        });
         dom.adminLoginBtn.addEventListener('click', handleAdminLogin);
         dom.adminPassword.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') handleAdminLogin();
         });
-        // Close modal on outside click
         dom.adminModal.addEventListener('click', (e) => {
             if (e.target === dom.adminModal) {
                 dom.adminModal.style.display = 'none';

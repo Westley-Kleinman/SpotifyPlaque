@@ -38,12 +38,13 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const duration = metadata.duration || '0:00';
 
   // --- Color Palette ---
-  // When isPreview is true, we simulate the look of a clear plaque against a dark background.
+  // When isPreview true, we simulate the look of a clear plaque.
   // Engraved parts become light, and the plaque itself is transparent.
   const engraveFill = isPreview ? '#E5E7EB' : '#000000'; // Light gray for preview, black for final cut file
   const lightFill = isPreview ? '#4A5568' : '#f1f2f2';   // A darker gray for contrast elements in preview
   const plaqueFill = 'transparent';                       // Plaque is always transparent
   const plaqueStroke = isPreview ? 'rgba(255,255,255,0.2)' : '#000000'; // Faint outline in preview, black for final
+  const cutOutlineColor = isPreview ? engraveFill : '#ff0000'; // Use engrave color for preview outline, red for final cut
 
   // Time calculation based on progress
   const [m, s] = duration.split(':').map(Number);
@@ -100,9 +101,6 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   // Times left-aligned at bar start (combined current / total)
   // Revert to separate left/right times with visual edge alignment.
   // Because of font side bearings, we nudge positions slightly so the glyph ink (not the advance box) appears flush with bar edges.
-  const timesY = barY + 34; // below bar
-  // Fine-grained side bearing adjustments so the VISIBLE ink (not advance box) of first/last digits
-  // sits flush with the progress bar edges. Tune independently.
   // Simple direct positioning: place timestamps exactly at bar edges
   // Left time: anchor at bar start (x=0) with text-anchor="start" 
   // Right time: anchor at bar end (x=barWidth) with text-anchor="end"
@@ -122,12 +120,12 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
       /* Engrave: every solid dark element to be raster engraved */
       .engrave { fill:${engraveFill}; stroke:none; }
       /* Red cutting outline for perimeter */
-      .cut-outline { fill:none; stroke:#ff0000; stroke-width:0.1mm; }
+      .cut-outline { fill:none; stroke:${cutOutlineColor}; stroke-width:0.1mm; }
       /* Text (engrave) */
       .dyn-text { fill:${engraveFill}; stroke:none; font-family: Arial, sans-serif; }
       .dyn-title { font-size:34px; font-weight:900; font-family:'Arial Black','Helvetica Neue',Arial,sans-serif; letter-spacing:-1px; font-stretch:condensed; }
       .dyn-artist { font-size:20px; font-weight:600; font-family:Arial,'Helvetica Neue',Arial,sans-serif; letter-spacing:0; }
-      .dyn-time { font-size:24px; font-weight:500; font-family:Arial,'Helvetica Neue',Arial,sans-serif; text-anchor:start; letter-spacing:0; }
+      .dyn-time { fill:${engraveFill}; font-size:24px; font-weight:500; font-family:Arial,'Helvetica Neue',Arial,sans-serif; text-anchor:start; letter-spacing:0; }
       .dyn-time-end { text-anchor:end; }
     </style>
   </defs>
