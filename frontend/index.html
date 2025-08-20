@@ -2,231 +2,163 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Spotify Plaque Designer</title>
-    <meta name="color-scheme" content="dark light" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Custom Spotify Plaque – Modern Personal Gift</title>
+    <meta name="description" content="Design and order your custom laser‑engraved Spotify style plaque in seconds." />
     <style>
         :root {
-            --accent:#1db954; --accent-glow:#1ed760; --bg:#0e1114; --bg-alt:#14191f; --panel:#171d23; --panel-alt:#1f262d; --border:#2a343c; --border-soft:#1f292f;
-            --text:#eef4f5; --text-dim:#a0b1bd; --danger:#ff5f56; --warn:#ffc542; --radius:16px; --focus:0 0 0 3px rgba(29,185,84,.35);
-            --grad:radial-gradient(circle at 25% 15%, #20313a 0%, #0e1114 60%);
-            --font-stack: system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;
-            --mono: ui-monospace,Menlo,Consolas,monospace;
+            --bg:#ffffff; --bg-alt:#f4f8fb; --bg-soft:#eef5fa; --line:#dbe6ef; --line-soft:#e6edf3;
+            --text:#0e1b27; --text-dim:#5a6d7d; --accent:#4da8ff; --accent-alt:#6bb7ff; --accent-soft:#e3f3ff;
+            --danger:#ff4d61; --radius:20px; --shadow:0 4px 18px -6px rgba(30,70,110,.15),0 2px 4px -1px rgba(40,70,110,.08);
+            --mono:ui-monospace,Menlo,Consolas,monospace; --font: 'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
         }
-        .light-theme:root, body.light {
-            --bg:#f6f8f9; --bg-alt:#ffffff; --panel:#ffffff; --panel-alt:#f1f5f7; --border:#d9e1e6; --border-soft:#e4ebef; --text:#162028; --text-dim:#5b6d78;
-            --grad:radial-gradient(circle at 30% 10%, #ffffff 0%, #f0f4f6 70%);
-        }
-        * { box-sizing:border-box; }
-        html,body { margin:0; font-family:var(--font-stack); -webkit-font-smoothing:antialiased; }
-        body { min-height:100vh; background:var(--grad),linear-gradient(120deg,#0e1114,#10151a); color:var(--text); display:flex; flex-direction:column; position:relative; }
-        body::after { content:""; position:fixed; inset:0; pointer-events:none; background:
-             repeating-linear-gradient(45deg,rgba(255,255,255,.015) 0 2px,transparent 2px 4px),
-             repeating-linear-gradient(-45deg,rgba(255,255,255,.008) 0 3px,transparent 3px 6px);
-            mix-blend-mode:overlay; opacity:.5; }
-        a { color:var(--accent); text-decoration:none; }
-        a:hover { text-decoration:underline; }
-        .app-shell { width:100%; max-width:1680px; margin:0 auto; padding:0 clamp(18px,3.6vw,60px); flex:1; display:flex; flex-direction:column; }
-        /* Top Bar */
-        nav { display:flex; align-items:center; gap:24px; padding:22px 0 18px; position:relative; }
-        .brand { display:flex; gap:14px; align-items:center; font-weight:600; font-size:clamp(1.05rem,1.9vw,1.3rem); letter-spacing:.5px; }
-        .brand-icon { width:44px; aspect-ratio:1; display:grid; place-items:center; border-radius:14px; background:linear-gradient(145deg,#1db954,#178741); position:relative; box-shadow:0 4px 14px -4px rgba(0,0,0,.6),0 0 0 1px #0d1417 inset; }
-        .brand-icon svg { width:52%; fill:#09130d; }
-        .tagline { font-size:.83rem; margin:4px 0 0; color:var(--text-dim); max-width:560px; line-height:1.4; }
-        .grow { flex:1; }
-        .top-actions { display:flex; gap:10px; align-items:center; }
-        /* Theme toggle */
-        .theme-toggle { --s:44px; width:var(--s); height:var(--s); border-radius:14px; background:var(--panel-alt); border:1px solid var(--border); display:grid; place-items:center; cursor:pointer; position:relative; color:var(--text-dim); transition:background .3s,border-color .3s,color .3s; }
-        .theme-toggle:hover { color:var(--accent); }
-        .theme-toggle:focus-visible { outline:none; box-shadow:var(--focus); }
-        /* Layout */
-        main { flex:1; display:grid; grid-template-columns: minmax(340px,460px) minmax(0,1fr); gap:40px; padding:4px 0 60px; align-items:start; }
-        @media (max-width:1080px){ main { grid-template-columns:1fr; } }
-        /* Panels */
-        .panel { background:linear-gradient(160deg,var(--panel),var(--panel-alt)); border:1px solid var(--border); border-radius:var(--radius); padding:30px clamp(22px,3vw,40px) 34px; display:flex; flex-direction:column; gap:30px; position:relative; box-shadow:0 10px 30px -10px rgba(0,0,0,.6),0 0 0 1px var(--border-soft) inset; }
-        .panel::before { content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit; background:linear-gradient(120deg,rgba(255,255,255,.06),transparent 40%, transparent 60%, rgba(255,255,255,.04)); mix-blend-mode:overlay; }
-        h1 { margin:0; font-weight:700; letter-spacing:-.5px; }
-        h2 { margin:0 0 2px; font-size:.8rem; font-weight:600; color:var(--text-dim); letter-spacing:.6px; text-transform:uppercase; }
-        label { font-size:.7rem; font-weight:600; letter-spacing:.55px; text-transform:uppercase; color:var(--text-dim); display:block; margin:0 0 10px; }
-        .field { display:flex; flex-direction:column; gap:10px; }
-        input[type=text] { width:100%; background:var(--bg-alt); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:15px 18px 13px; font-size:clamp(.95rem,1rem,1.05rem); font-weight:500; outline:none; line-height:1.3; letter-spacing:.3px; transition:border-color .28s,background .35s, box-shadow .25s; }
-        input[type=text]:focus { border-color:var(--accent); box-shadow:var(--focus); }
-        input[type=text]::placeholder { color:var(--text-dim); opacity:.5; }
-        /* Progress Slider */
-        .progress-wrap { display:flex; flex-direction:column; gap:6px; }
-        .progress-bar-container { position:relative; height:36px; }
-        .progress-track { position:absolute; top:50%; left:0; width:100%; height:10px; background:linear-gradient(180deg,#1d272e,#12191d); border:1px solid var(--border); border-radius:99px; transform:translateY(-50%); cursor:pointer; overflow:hidden; }
-        .progress-reflect { position:absolute; inset:0; background:linear-gradient(45deg,rgba(255,255,255,.06),transparent 60%); mix-blend-mode:overlay; pointer-events:none; }
-        .progress-fill { position:absolute; top:0; left:0; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-glow)); border-right:1px solid rgba(0,0,0,.4); box-shadow:0 0 0 1px rgba(0,0,0,.35) inset,0 0 14px -2px var(--accent); border-radius:inherit; pointer-events:none; }
-        .progress-knob { position:absolute; top:50%; width:26px; height:26px; transform:translate(-50%,-50%); background:linear-gradient(145deg,#ffffff,#dce7dd); color:#0b130d; font-size:.55rem; font-weight:600; display:grid; place-items:center; border-radius:15px; box-shadow:0 4px 14px -4px rgba(0,0,0,.7),0 0 0 1px rgba(0,0,0,.55) inset,0 0 0 3px rgba(255,255,255,.15) inset; cursor:grab; user-select:none; transition:transform .15s, box-shadow .25s; }
-        body.light .progress-knob { background:linear-gradient(145deg,#f0f7f2,#d7e2d8); }
-        .progress-knob:active { cursor:grabbing; transform:translate(-50%,-50%) scale(1.08); }
-        .progress-knob:focus-visible { outline:none; box-shadow:0 0 0 4px rgba(29,185,84,.55),0 0 0 1px #000 inset; }
-        .time-display { display:flex; justify-content:space-between; font-size:.7rem; font-family:var(--mono); letter-spacing:.5px; color:var(--text-dim); }
-        /* Buttons */
-        .actions { display:flex; gap:14px; flex-wrap:wrap; }
-        .btn { --pad:14px 24px 13px; font:600 .92rem var(--font-stack); padding:var(--pad); border-radius:14px; background:linear-gradient(140deg,var(--accent),var(--accent-glow)); color:#06150d; border:1px solid #0c2e18; display:inline-flex; gap:10px; align-items:center; cursor:pointer; text-decoration:none; position:relative; letter-spacing:.4px; box-shadow:0 6px 18px -6px rgba(0,0,0,.7), 0 2px 0 0 rgba(255,255,255,.18) inset, 0 0 0 1px rgba(0,0,0,.6) inset; transition:transform .18s,filter .3s,box-shadow .3s; }
-        .btn:hover { filter:brightness(1.06); }
-        .btn:active { transform:translateY(2px); box-shadow:0 2px 12px -3px rgba(0,0,0,.8), 0 0 0 1px rgba(0,0,0,.65) inset; }
-        .btn:focus-visible { outline:none; box-shadow:var(--focus), 0 0 0 1px rgba(0,0,0,.65) inset; }
-        .btn.secondary { background:var(--panel-alt); color:var(--text-dim); border:1px solid var(--border); box-shadow:0 3px 10px -4px rgba(0,0,0,.6),0 0 0 1px var(--border-soft) inset; }
-        .btn.secondary:hover { color:var(--accent); }
-        .btn[disabled] { opacity:.45; cursor:not-allowed; filter:none; }
-        .status { font-size:.75rem; line-height:1.45; background:var(--bg-alt); border:1px solid var(--border); padding:12px 14px 11px; border-radius:12px; min-height:48px; color:var(--text-dim); white-space:pre-line; position:relative; }
-        .status[data-state="error"] { color:#ffb7b7; background:#271316; border-color:#432126; }
-        .meta-line { font-size:.72rem; letter-spacing:.5px; color:var(--text-dim); display:flex; align-items:center; gap:10px; min-height:20px; }
-        /* Preview */
-        .preview-shell { display:flex; flex-direction:column; gap:18px; min-height:380px; }
-        .preview-header { display:flex; align-items:center; justify-content:space-between; }
-        .preview-title { font-size:.75rem; font-weight:600; letter-spacing:.55px; text-transform:uppercase; color:var(--text-dim); margin:0; }
-        .preview-stage { flex:1; min-height:380px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:22px 20px; overflow:auto; position:relative; box-shadow:0 8px 26px -12px rgba(0,0,0,.6), 0 0 0 1px var(--border-soft) inset; }
-        .preview-stage svg { max-width:100%; height:auto; display:block; margin:0 auto; }
-        .placeholder { text-align:center; padding-top:70px; font-size:.85rem; color:var(--text-dim); }
-        /* Skeleton */
-        .skeleton { --shimmer:linear-gradient(110deg,transparent 0%,rgba(255,255,255,.14) 45%,rgba(255,255,255,.2) 50%,rgba(255,255,255,.14) 55%,transparent 100%); background:linear-gradient(var(--panel-alt),var(--panel-alt)) var(--panel-alt); position:relative; overflow:hidden; border-radius:12px; min-height:200px; }
-        .skeleton::after { content:""; position:absolute; inset:0; background:var(--shimmer); background-size:220% 100%; animation:shimmer 1.5s linear infinite; mix-blend-mode:overlay; }
-        @keyframes shimmer { to { background-position: -200% 0; } }
-        /* Footer */
-        footer { padding:40px 0; font-size:.65rem; color:var(--text-dim); text-align:center; opacity:.8; }
-        footer a { color:var(--text-dim); }
-        footer a:hover { color:var(--accent); }
-        /* Animations */
-        .fade { animation:fade .38s ease; }
-        @keyframes fade { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:translateY(0);} }
-        .scale-in { animation:scaleIn .35s ease; }
-        @keyframes scaleIn { from { opacity:0; transform:scale(.94);} to { opacity:1; transform:scale(1);} }
-        /* Utility */
-        .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); border:0; }
+        *{box-sizing:border-box;} html,body{margin:0;font-family:var(--font);color:var(--text);-webkit-font-smoothing:antialiased;background:linear-gradient(180deg,#f9fcfe,#f0f6fb);} body{display:flex;flex-direction:column;min-height:100vh;}
+        header{padding: clamp(20px,4vw,48px) clamp(20px,5vw,70px) 10px;display:flex;flex-direction:column;gap:40px;}
+        .top{display:flex;align-items:center;gap:18px;}
+        .logo{display:flex;align-items:center;gap:14px;font-weight:600;font-size:1.05rem;letter-spacing:.5px;color:var(--text);}
+        .logo-badge{width:50px;height:50px;border-radius:16px;background:linear-gradient(140deg,var(--accent),var(--accent-alt));display:grid;place-items:center;box-shadow:0 6px 16px -6px rgba(60,140,220,.45),0 0 0 1px rgba(70,140,210,.35) inset;}
+        .logo-badge svg{width:56%;fill:#08324f;}
+        .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:60px;align-items:start;}
+        h1{margin:0;font-size:clamp(2.4rem,6vw,3.8rem);line-height:1.02;letter-spacing:-1.6px;background:linear-gradient(90deg,#12344d,#0d2233);-webkit-background-clip:text;background-clip:text;color:transparent;}
+        .lead{font-size:clamp(1rem,1.25rem,1.25rem);line-height:1.55;color:var(--text-dim);max-width:560px;margin:24px 0 34px;}
+        .pill-row{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 34px;}
+        .pill{font-size:.65rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;background:var(--accent-soft);color:#1d4b70;padding:10px 14px 9px;border-radius:40px;border:1px solid #c7e5fb;}
+        .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:32px 30px 38px;display:flex;flex-direction:column;gap:30px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+        .card:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.7),transparent 60%);pointer-events:none;mix-blend-mode:overlay;}
+        label{font-size:.63rem;font-weight:600;letter-spacing:.55px;text-transform:uppercase;color:var(--text-dim);display:block;margin:0 0 10px;}
+        input[type=text], input[type=email]{width:100%;padding:16px 18px 14px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--text);font:500 .95rem var(--font);letter-spacing:.3px;outline:none;transition:border-color .25s,box-shadow .25s;}
+        input[type=text]:focus,input[type=email]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(77,168,255,.3);} input::placeholder{color:#9fb2c0;}
+        .progress-wrap{display:flex;flex-direction:column;gap:8px;margin-top:-4px;}
+        .slider-shell{position:relative;height:40px;}
+        .progress-track{position:absolute;top:50%;left:0;transform:translateY(-50%);width:100%;height:12px;background:linear-gradient(180deg,#d9e7f2,#c3d9e8);border-radius:60px;box-shadow:0 2px 4px -1px rgba(50,90,130,.18) inset,0 1px 2px rgba(255,255,255,.8);}    
+        .progress-fill{position:absolute;top:50%;left:0;transform:translateY(-50%);height:12px;background:linear-gradient(90deg,var(--accent),var(--accent-alt));border-radius:60px;box-shadow:0 0 0 1px rgba(40,120,190,.3) inset,0 2px 6px -1px rgba(70,150,230,.5);} 
+        .progress-knob{position:absolute;top:50%;width:30px;height:30px;transform:translate(-50%,-50%);background:linear-gradient(160deg,#ffffff,#ecf6ff);border:1px solid #b5d9f3;border-radius:50%;display:grid;place-items:center;font-size:.55rem;font-weight:600;color:#2d6c95;box-shadow:0 6px 14px -4px rgba(40,110,170,.35),0 0 0 4px rgba(77,168,255,.18),0 0 0 1px #c2e4fb inset;cursor:grab;user-select:none;transition:box-shadow .25s,transform .2s;} .progress-knob:active{cursor:grabbing;transform:translate(-50%,-50%) scale(1.08);} 
+        .time-row{display:flex;justify-content:space-between;font:500 .7rem var(--mono);letter-spacing:.6px;color:#567086;margin-top:4px;}
+        .btn-row{display:flex;flex-wrap:wrap;gap:14px;}
+        .btn{--pad:15px 26px 14px;--grad:linear-gradient(140deg,var(--accent),var(--accent-alt));font:600 .9rem var(--font);letter-spacing:.45px;padding:var(--pad);border-radius:16px;border:1px solid #2f81c5;background:var(--grad);color:#06365a;display:inline-flex;gap:10px;align-items:center;cursor:pointer;box-shadow:0 6px 18px -6px rgba(40,120,200,.5),0 0 0 1px rgba(40,110,170,.4) inset;transition:.25s;} .btn:hover{filter:brightness(1.06);} .btn:active{transform:translateY(2px);} .btn[disabled]{opacity:.45;cursor:not-allowed;filter:none;}
+        .btn.secondary{background:#fff;border:1px solid var(--line);color:#39627d;box-shadow:0 3px 10px -4px rgba(40,100,150,.18),0 0 0 1px #dbe6ef inset;} .btn.secondary:hover{border-color:#b8cfdd;}
+        .status{background:var(--bg-soft);border:1px solid var(--line);padding:14px 16px 13px;border-radius:14px;font-size:.72rem;min-height:46px;color:#476173;white-space:pre-line;}
+        .status[data-state=error]{background:#ffe8ec;border-color:#ffc9d1;color:#c13246;}
+        .meta-line{font-size:.7rem;letter-spacing:.5px;color:#597285;min-height:20px;}
+        .preview-stage{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:26px 20px;min-height:400px;box-shadow:var(--shadow);overflow:auto;}
+        .preview-stage svg{max-width:100%;display:block;margin:0 auto;}
+        .placeholder{padding:90px 10px 60px;text-align:center;font-size:.9rem;color:#7b95a8;}
+        .order-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:28px 28px 34px;display:flex;flex-direction:column;gap:26px;box-shadow:var(--shadow);}
+        .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px;align-items:start;margin-top:70px;}
+        .order-total{font-size:1.05rem;font-weight:600;letter-spacing:.4px;color:#0d324c;}
+        .small{font-size:.65rem;letter-spacing:.5px;text-transform:uppercase;font-weight:600;color:#5b7080;margin:0 0 6px;}
+        footer{margin-top:auto;padding:70px 30px 55px;text-align:center;font-size:.65rem;color:#6b8091;}
+        .fade{animation:fade .35s ease;} @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+        .skeleton{background:linear-gradient(90deg,#e4eef5,#f4f9fc,#e4eef5);background-size:200% 100%;animation:shimmer 1.4s linear infinite;border-radius:18px;height:240px;margin:0 auto;max-width:420px;} @keyframes shimmer{to{background-position:-200% 0;}}
     </style>
 </head>
 <body>
-    <div class="app-shell">
-        <nav>
-            <div class="brand" aria-label="App Brand">
-                <div class="brand-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path d="M8 5.5c0-.5.4-.9.9-.9h6.2c.5 0 .9.4.9.9v12.9a.9.9 0 0 1-1.4.8l-3.2-2.1-3.2 2.1a.9.9 0 0 1-1.4-.8V5.5Z"/></svg>
+    <header>
+        <div class="top">
+            <div class="logo"><div class="logo-badge"><svg viewBox="0 0 24 24"><path d="M8 5.5c0-.5.4-.9.9-.9h6.2c.5 0 .9.4.9.9v12.9a.9.9 0 0 1-1.4.8l-3.2-2.1-3.2 2.1a.9.9 0 0 1-1.4-.8V5.5Z"/></svg></div> Custom Spotify Plaque</div>
+        </div>
+        <div class="hero">
+            <div>
+                <h1>Your song. Your moment. On a minimal plaque.</h1>
+                <p class="lead">Search any track, lock in a lyric moment with the progress bar, and order a crisp laser‑engraved plaque. Clean, modern, made for dorm walls + thoughtful gifting.</p>
+                <div class="pill-row">
+                    <div class="pill">Fast Turnaround</div>
+                    <div class="pill">Laser Engraved</div>
+                    <div class="pill">Student Friendly</div>
+                    <div class="pill">Gift Ready</div>
                 </div>
-                <span>Plaque Designer</span>
-            </div>
-            <p class="tagline">Design your laser‑ready Spotify style plaque. <a href="/shop.html" style="color:var(--accent);font-weight:600;">Shop materials & sizes →</a></p>
-            <div class="grow"></div>
-            <a href="/shop.html" style="font-size:.75rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--text-dim);padding:10px 14px;border:1px solid var(--border);border-radius:12px;text-decoration:none;">Shop</a>
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark">
-                <svg id="themeIcon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2m18 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
-            </button>
-        </nav>
-        <main>
-            <section class="panel" aria-labelledby="inputsTitle">
-                <h2 id="inputsTitle">Track & Settings</h2>
-                <div class="field">
-                    <label for="songInput">Song Search</label>
-                    <input id="songInput" type="text" spellcheck="false" autocomplete="off" placeholder="Try: Bohemian Rhapsody Queen" aria-describedby="songHelp" />
-                    <div id="songHelp" class="meta-line" style="margin-top:-4px;">Add artist for precision if results mismatch.</div>
-                </div>
-                <div class="progress-wrap" aria-labelledby="progressLabel">
-                    <label id="progressLabel" for="progressKnob">Progress Position</label>
-                    <div class="progress-bar-container" id="progressBar" aria-label="Scrub track position" role="slider" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" tabindex="0">
-                        <div class="progress-track"></div>
-                        <div class="progress-reflect" aria-hidden="true"></div>
-                        <div class="progress-fill" id="progressFill"></div>
-                        <div class="progress-knob" id="progressKnob" tabindex="0" role="presentation"></div>
+                <div class="card" aria-labelledby="designerTitle">
+                    <h2 id="designerTitle" style="margin:0 0 4px;font-size:.7rem;letter-spacing:.55px;text-transform:uppercase;color:#5d7486;">Design Preview</h2>
+                    <div>
+                        <label for="songInput">Track (title + artist)</label>
+                        <input id="songInput" type="text" placeholder="Example: Nineties - BØRNS" autocomplete="off" spellcheck="false" />
                     </div>
-                    <div class="time-display" aria-hidden="false"><span id="currentTime">0:00</span><span id="totalTime">--:--</span></div>
-                    <input type="hidden" id="progressTime" value="0:00" />
-                </div>
-                        <div class="actions">
-                            <button class="btn" id="previewBtn">Preview</button>
-                            <button class="btn secondary" id="downloadBtn" disabled>Download SVG</button>
-                            <button class="btn secondary" id="downloadImgBtn" disabled>Download Cover</button>
-                            <a id="downloadLink" class="btn secondary" style="display:none;" download>Save SVG</a>
-                            <a id="downloadLinkImg" class="btn secondary" style="display:none;" download>Save Cover</a>
+                    <div class="progress-wrap">
+                        <label for="progressBar">Moment (scrub to capture)</label>
+                        <div class="slider-shell" id="progressBar" role="slider" aria-label="Track position" aria-valuemin="0" aria-valuenow="0" aria-valuemax="0" tabindex="0">
+                            <div class="progress-track"></div>
+                            <div class="progress-fill" id="progressFill"></div>
+                            <div class="progress-knob" id="progressKnob"></div>
                         </div>
-                <div class="status" id="statusBox" aria-live="polite" aria-atomic="true">Idle</div>
-                <div class="meta-line" id="metaLine"></div>
-            </section>
-            <section class="preview-shell" aria-labelledby="previewTitle">
-                <div class="preview-header">
-                    <h2 class="preview-title" id="previewTitle">Live Preview</h2>
-                    <div style="font-size:.65rem; color:var(--text-dim); letter-spacing:.5px;">SVG renders locally</div>
+                        <div class="time-row"><span id="currentTime">0:00</span><span id="totalTime">--:--</span></div>
+                        <input type="hidden" id="progressTime" value="0:00" />
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn" id="previewBtn">Preview Plaque</button>
+                        <button class="btn secondary" id="downloadBtn" disabled>Download SVG</button>
+                    </div>
+                    <div class="status" id="statusBox" aria-live="polite">Idle. Search a track to start.</div>
+                    <div class="meta-line" id="metaLine"></div>
                 </div>
-                <div class="preview-stage" id="previewStage">
-                    <div class="placeholder">No preview yet</div>
-                </div>
-            </section>
-        </main>
-        <footer>
-            <div>Generated locally • Red strokes = cut • Black = engrave • Built for educational / personal use</div>
-        </footer>
-    </div>
+            </div>
+            <div class="preview-stage" id="previewStage">
+                <div class="placeholder">No preview yet</div>
+            </div>
+        </div>
+    </header>
+
+    <section class="split" aria-label="Order">
+        <div class="order-card">
+            <h2 style="margin:0;font-size:.75rem;letter-spacing:.6px;text-transform:uppercase;color:#5d7486;">Order Your Plaque</h2>
+            <p style="margin:0;font-size:.85rem;line-height:1.5;color:#5a6f80;">One standard size plaque. We engrave exactly what you preview (album art outline only). Enter your contact details and place the order.</p>
+            <div>
+                <label for="custName">Name</label>
+                <input id="custName" type="text" placeholder="Your name" />
+            </div>
+            <div>
+                <label for="custEmail">Email</label>
+                <input id="custEmail" type="email" placeholder="you@school.edu" />
+            </div>
+            <div>
+                <label for="custNotes">Notes (optional)</label>
+                <input id="custNotes" type="text" placeholder="Any special instructions" />
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+                <div class="order-total">$24.99 <span style="font-size:.65rem;font-weight:600;letter-spacing:.5px;color:#5b6f80;margin-left:6px;">Intro Price</span></div>
+                <button class="btn" id="orderBtn" disabled>Place Order</button>
+            </div>
+            <div class="status" id="orderStatus" style="min-height:42px;">Awaiting preview…</div>
+        </div>
+        <div class="card" style="gap:20px;">
+            <h2 style="margin:0;font-size:.75rem;letter-spacing:.6px;text-transform:uppercase;color:#5d7486;">What You Get</h2>
+            <ul style="margin:0;padding:0 0 0 18px;display:flex;flex-direction:column;gap:10px;font-size:.8rem;line-height:1.4;color:#4b6273;">
+                <li>Crisp laser engraving (all black fill) + precise red cut outline</li>
+                <li>Album art placeholder rectangle only (no raster image)</li>
+                <li>Durable acrylic – easy to mount or display</li>
+                <li>Turnaround typically 3–5 business days</li>
+                <li>Designed for college / dorm aesthetics</li>
+            </ul>
+            <div style="font-size:.65rem;line-height:1.5;color:#6a7f90;margin-top:4px;">Not affiliated with Spotify. For personal gifting & decor.</div>
+        </div>
+    </section>
+
+    <footer>
+        &copy; <span id="year"></span> Custom Spotify Plaque • Built for students. Red = cut. Black = engrave.
+    </footer>
 
     <script>
-        // ---- Config & Element Helpers ----
-        const API_BASE = (()=>{ try { const o = window.location.origin||''; if(!/^https?:/i.test(o)) return 'http://localhost:3001/api'; return o.replace(/\/$/,'') + '/api'; } catch{ return 'http://localhost:3001/api'; } })();
-        const qs = id => document.getElementById(id);
-        const els = {
-            song:()=>qs('songInput'), knob:()=>qs('progressKnob'), bar:()=>qs('progressBar'), fill:()=>qs('progressFill'),
-            cur:()=>qs('currentTime'), total:()=>qs('totalTime'), hidden:()=>qs('progressTime'), previewBtn:()=>qs('previewBtn'),
-            downloadBtn:()=>qs('downloadBtn'), downloadImgBtn:()=>qs('downloadImgBtn'), downloadLink:()=>qs('downloadLink'), downloadLinkImg:()=>qs('downloadLinkImg'), stage:()=>qs('previewStage'), status:()=>qs('statusBox'), meta:()=>qs('metaLine'),
-            themeToggle:()=>qs('themeToggle'), themeIcon:()=>qs('themeIcon')
-        };
-
-        // ---- State ----
-        let trackDurationSec = 0; let currentSec = 0; let dragging = false; let lastSvg=''; let lastMeta=null; let debounceId; let isLoading=false;
-
-        // ---- Utilities ----
-        const format = sec => { const m=Math.floor(sec/60); const s=sec%60; return `${m}:${String(s).padStart(2,'0')}`; };
-        function setStatus(msg, isError=false){ const box=els.status(); box.textContent=msg; box.dataset.state = isError? 'error':'normal'; }
-        const pct = () => trackDurationSec? currentSec/trackDurationSec : 0;
-        function updateProgressUI(){ const percentage=pct(); const p = (percentage*100).toFixed(3); els.knob().style.left = p + '%'; els.fill().style.width = p + '%'; els.cur().textContent = format(currentSec); els.hidden().value = format(currentSec); const bar=els.bar(); bar.setAttribute('aria-valuenow', currentSec); bar.setAttribute('aria-valuetext', format(currentSec)); }
-        function seekFromClientX(clientX){ const bar=els.bar(); const rect=bar.getBoundingClientRect(); let x=Math.max(0, Math.min(rect.width, clientX-rect.left)); const frac=x/rect.width; currentSec=Math.min(trackDurationSec, Math.round(frac*trackDurationSec)); updateProgressUI(); }
-
-        // ---- Slider Events (mouse + touch + keyboard) ----
-        function attachSlider(){ const knob=els.knob(); const bar=els.bar();
-            bar.addEventListener('mousedown', e=>{ if(e.target===knob) return; seekFromClientX(e.clientX); previewDebounced(); });
-            knob.addEventListener('mousedown', e=>{ dragging=true; e.preventDefault(); });
-            document.addEventListener('mousemove', e=>{ if(!dragging) return; seekFromClientX(e.clientX); });
-            document.addEventListener('mouseup', ()=>{ if(dragging){ dragging=false; previewDebounced(); } });
-            // Touch
-            bar.addEventListener('touchstart', e=>{ const t=e.touches[0]; if(e.target===knob){ dragging=true; } else { seekFromClientX(t.clientX); previewDebounced(); } });
-            document.addEventListener('touchmove', e=>{ if(!dragging) return; seekFromClientX(e.touches[0].clientX); });
-            document.addEventListener('touchend', ()=>{ if(dragging){ dragging=false; previewDebounced(); } });
-            // Keyboard (on bar for slider semantics)
-            bar.addEventListener('keydown', e=>{ if(!trackDurationSec) return; let delta=0; if(e.key==='ArrowRight'||e.key==='ArrowUp') delta=1; else if(e.key==='ArrowLeft'||e.key==='ArrowDown') delta=-1; else if(e.key==='PageUp') delta=5; else if(e.key==='PageDown') delta=-5; else if(e.key==='Home') { currentSec=0; updateProgressUI(); previewDebounced(); e.preventDefault(); return;} else if(e.key==='End'){ currentSec=trackDurationSec; updateProgressUI(); previewDebounced(); e.preventDefault(); return;} else return; currentSec=Math.min(trackDurationSec, Math.max(0, currentSec+delta)); updateProgressUI(); previewDebounced(); e.preventDefault(); });
-        }
-
-        // ---- API Calls ----
-        async function fetchMetadata(q){ const body = JSON.stringify({ query:q }); const resp = await fetch(`${API_BASE}/spotify-metadata`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body }); const json = await resp.json(); if(!resp.ok || !json.success) throw new Error(json.error||'Metadata lookup failed'); return json.data; }
-        async function fetchPreview(q, progressTime){ const body = JSON.stringify({ query:q, progressTime }); const resp = await fetch(`${API_BASE}/preview-plaque`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body }); const txt = await resp.text(); if(!resp.ok || !txt.startsWith('<?xml')) throw new Error('Preview generation failed'); return txt; }
-
-        // ---- Rendering ----
-        function renderSvg(svg){ const stage=els.stage(); if(!svg){ stage.innerHTML='<div class="placeholder">No preview</div>'; return; } stage.innerHTML=svg; stage.classList.add('fade'); setTimeout(()=>stage.classList.remove('fade'),420); }
-        function showSkeleton(){ const stage=els.stage(); stage.innerHTML='<div class="skeleton"></div>'; }
-
-        // ---- Preview Flow ----
-            async function preview(){ const query = els.song().value.trim(); if(!query){ setStatus('Enter a song title (add artist for precision).', true); return; } setStatus('Fetching metadata...'); els.previewBtn().disabled = true; isLoading=true; showSkeleton(); try { const meta = await fetchMetadata(query); lastMeta = meta; if(meta.duration){ const [m,s]=meta.duration.split(':').map(Number); trackDurationSec = m*60+s; els.bar().setAttribute('aria-valuemax', trackDurationSec); if(currentSec>trackDurationSec) currentSec = Math.round(trackDurationSec*0.4); els.total().textContent = meta.duration; } else { trackDurationSec=0; els.total().textContent='--:--'; }
-                    updateProgressUI(); setStatus('Rendering preview...'); const svg = await fetchPreview(query, els.hidden().value); lastSvg=svg; renderSvg(svg); els.downloadBtn().disabled=false; if(meta.image) els.downloadImgBtn().disabled=false; els.meta().textContent=`${meta.title} • ${meta.artist} (${meta.duration||'--:--'})`; setStatus('Preview ready'); }
-                catch(err){ console.error(err); setStatus(err.message, true); els.downloadBtn().disabled=true; els.downloadImgBtn().disabled=true; els.meta().textContent=''; renderSvg(null); }
-            finally { els.previewBtn().disabled=false; isLoading=false; }
-        }
-
-        const previewDebounced = ()=>{ clearTimeout(debounceId); debounceId=setTimeout(()=>preview(), 520); };
-
-        // ---- Download ----
-                async function prepareDownload(){ const query=els.song().value.trim(); if(!query){ setStatus('No track to download', true); return;} try { setStatus('Generating clean SVG...'); els.downloadBtn().disabled=true; const body=JSON.stringify({ query, progressTime: els.hidden().value, style:'minimal' }); const resp= await fetch(`${API_BASE}/generate-plaque`, { method:'POST', headers:{'Content-Type':'application/json'}, body }); const svg = await resp.text(); if(!resp.ok || !svg.startsWith('<?xml')) throw new Error('Generation failed'); const fileName=`spotify-plaque-${Date.now()}.svg`; const blob=new Blob([svg],{type:'image/svg+xml'}); const url=URL.createObjectURL(blob); const link=els.downloadLink(); link.href=url; link.download=fileName; link.style.display='inline-flex'; link.textContent='Save SVG'; link.classList.add('scale-in'); setStatus('Clean SVG ready. Click Save SVG.'); }
-                    catch(e){ console.error(e); setStatus(e.message||'Download failed', true);} finally { els.downloadBtn().disabled=false; } }
-            async function prepareDownloadImage(){ if(!lastMeta || !lastMeta.image) return; try { setStatus('Fetching cover image...'); const resp = await fetch(lastMeta.image); if(!resp.ok) throw new Error('Cover fetch failed'); const blob = await resp.blob(); const ext = (blob.type && blob.type.includes('png')) ? 'png' : (blob.type.includes('jpeg')?'jpg':'img'); const fileName = `spotify-cover-${Date.now()}.${ext}`; const url = URL.createObjectURL(blob); const link = els.downloadLinkImg(); link.href = url; link.download = fileName; link.style.display='inline-flex'; link.textContent='Save Cover'; link.classList.add('scale-in'); setStatus('Cover ready. Click Save Cover.'); }
-                catch(err){ console.error(err); setStatus(err.message||'Image download failed', true); } }
-
-        // ---- Theme Toggle ----
-        function initTheme(){ const stored=localStorage.getItem('plaque-theme'); if(stored==='light'){ document.body.classList.add('light'); swapThemeIcon(); } }
-        function swapThemeIcon(){ const icon=els.themeIcon(); if(document.body.classList.contains('light')){ icon.innerHTML='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />'; } else { icon.innerHTML='<circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2m18 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>'; } }
-        function toggleTheme(){ document.body.classList.toggle('light'); const mode=document.body.classList.contains('light')?'light':'dark'; localStorage.setItem('plaque-theme',mode); swapThemeIcon(); }
-
-        // ---- Events ----
-        function initEvents(){ els.song().addEventListener('input', previewDebounced); els.song().addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); preview(); } }); els.previewBtn().addEventListener('click', preview); els.downloadBtn().addEventListener('click', prepareDownload); els.downloadImgBtn().addEventListener('click', prepareDownloadImage); els.themeToggle().addEventListener('click', toggleTheme); }
-
-        // ---- Boot ----
-        (function init(){ initTheme(); attachSlider(); initEvents(); updateProgressUI(); setStatus('Idle. Type a song to begin.'); })();
+        const API_BASE = (()=>{ try { const o=location.origin||''; if(!/^https?:/i.test(o)) return 'http://localhost:3001/api'; return o.replace(/\/$/,'')+'/api'; } catch { return 'http://localhost:3001/api'; } })();
+        const qs=id=>document.getElementById(id);
+        const els={ song:()=>qs('songInput'), knob:()=>qs('progressKnob'), bar:()=>qs('progressBar'), fill:()=>qs('progressFill'), cur:()=>qs('currentTime'), total:()=>qs('totalTime'), hidden:()=>qs('progressTime'), previewBtn:()=>qs('previewBtn'), downloadBtn:()=>qs('downloadBtn'), stage:()=>qs('previewStage'), status:()=>qs('statusBox'), meta:()=>qs('metaLine'), orderBtn:()=>qs('orderBtn'), orderStatus:()=>qs('orderStatus'), name:()=>qs('custName'), email:()=>qs('custEmail'), notes:()=>qs('custNotes') };
+        let trackDurationSec=0,currentSec=0,dragging=false,lastSvg='',lastMeta=null,debounceId,isLoading=false;
+        const format=sec=>{const m=Math.floor(sec/60);const s=sec%60;return `${m}:${String(s).padStart(2,'0')}`};
+        function setStatus(msg,err=false){ const b=els.status(); b.textContent=msg; b.dataset.state=err?'error':'normal'; }
+        function setOrderStatus(msg,err=false){ const b=els.orderStatus(); b.textContent=msg; b.dataset.state=err?'error':'normal'; }
+        const pct=()=>trackDurationSec? currentSec/trackDurationSec : 0;
+        function updateProgressUI(){ const p=(pct()*100).toFixed(3); els.knob().style.left=p+'%'; els.fill().style.width=p+'%'; els.cur().textContent=format(currentSec); els.hidden().value=format(currentSec); els.bar().setAttribute('aria-valuenow',currentSec); }
+        function seek(clientX){ const rect=els.bar().getBoundingClientRect(); let x=Math.max(0,Math.min(rect.width,clientX-rect.left)); const frac=x/rect.width; currentSec=Math.min(trackDurationSec,Math.round(frac*trackDurationSec)); updateProgressUI(); }
+        function attachSlider(){ const bar=els.bar(),knob=els.knob(); bar.addEventListener('mousedown',e=>{ if(e.target===knob){dragging=true;} else {seek(e.clientX); previewDebounced();}}); document.addEventListener('mousemove',e=>{ if(!dragging)return; seek(e.clientX);}); document.addEventListener('mouseup',()=>{ if(dragging){dragging=false; previewDebounced();}}); bar.addEventListener('keydown',e=>{ if(!trackDurationSec) return; let d=0; if(['ArrowRight','ArrowUp'].includes(e.key)) d=1; else if(['ArrowLeft','ArrowDown'].includes(e.key)) d=-1; else if(e.key==='Home'){currentSec=0;} else if(e.key==='End'){currentSec=trackDurationSec;} else return; currentSec=Math.min(trackDurationSec,Math.max(0,currentSec+d)); updateProgressUI(); previewDebounced(); e.preventDefault(); }); }
+        async function fetchMetadata(q){ const body=JSON.stringify({query:q}); const r=await fetch(`${API_BASE}/spotify-metadata`,{method:'POST',headers:{'Content-Type':'application/json'},body}); const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.error||'Lookup failed'); return j.data; }
+        async function fetchPreview(q,progressTime){ const r=await fetch(`${API_BASE}/preview-plaque`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,progressTime})}); const t=await r.text(); if(!r.ok||!t.startsWith('<?xml')) throw new Error('Preview failed'); return t; }
+        function renderSvg(svg){ const stage=els.stage(); if(!svg){stage.innerHTML='<div class="placeholder">No preview</div>';return;} stage.innerHTML=svg; stage.classList.add('fade'); setTimeout(()=>stage.classList.remove('fade'),380); }
+        function showSkeleton(){ els.stage().innerHTML='<div class="skeleton"></div>'; }
+        async function preview(){ const q=els.song().value.trim(); if(!q){ setStatus('Enter a track (song + artist)'); return; } setStatus('Searching track…'); els.previewBtn().disabled=true; isLoading=true; showSkeleton(); try{ const meta=await fetchMetadata(q); lastMeta=meta; if(meta.duration){ const [m,s]=meta.duration.split(':').map(Number); trackDurationSec=m*60+s; els.bar().setAttribute('aria-valuemax',trackDurationSec); if(currentSec>trackDurationSec) currentSec=Math.round(trackDurationSec*0.4); els.total().textContent=meta.duration; } else { trackDurationSec=0; els.total().textContent='--:--'; } updateProgressUI(); setStatus('Rendering preview…'); const svg=await fetchPreview(q,els.hidden().value); lastSvg=svg; renderSvg(svg); setStatus('Preview ready'); els.meta().textContent=`${meta.title} • ${meta.artist}`; els.downloadBtn().disabled=false; els.orderBtn().disabled=false; setOrderStatus('Ready to order'); }
+        catch(e){ console.error(e); setStatus(e.message,true); renderSvg(null); els.downloadBtn().disabled=true; els.orderBtn().disabled=true; els.meta().textContent=''; setOrderStatus('Awaiting valid preview',true);} finally { els.previewBtn().disabled=false; isLoading=false; }}
+        const previewDebounced=()=>{ clearTimeout(debounceId); debounceId=setTimeout(preview,520); };
+        async function downloadSvg(){ const q=els.song().value.trim(); if(!q) return; try{ setStatus('Generating clean SVG…'); els.downloadBtn().disabled=true; const r=await fetch(`${API_BASE}/generate-plaque`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,progressTime:els.hidden().value,style:'minimal'})}); const svg=await r.text(); if(!r.ok||!svg.startsWith('<?xml')) throw new Error('Generation failed'); const name=`spotify-plaque-${Date.now()}.svg`; const blob=new Blob([svg],{type:'image/svg+xml'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setStatus('SVG downloaded'); }catch(e){ setStatus(e.message||'Download failed',true);} finally{ els.downloadBtn().disabled=false; }}
+        async function placeOrder(){ if(!lastMeta){ setOrderStatus('Preview a track first',true); return;} const name=els.name().value.trim(); const email=els.email().value.trim(); if(!name||!email){ setOrderStatus('Name & email required',true); return; } setOrderStatus('Placing order…'); try{ const body={ customer:{ name,email,notes:els.notes().value.trim() }, track:{ title:lastMeta.title, artist:lastMeta.artist, duration:lastMeta.duration, progress:els.hidden().value }, selection:{}, codes:[] }; const r=await fetch(`${API_BASE}/checkout`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.error||'Order failed'); setOrderStatus('Order placed #' + j.order.id); els.orderBtn().disabled=true; }catch(e){ setOrderStatus(e.message||'Order failed',true); }}
+        function initEvents(){ els.song().addEventListener('input',previewDebounced); els.song().addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); preview(); }}); els.previewBtn().addEventListener('click',preview); els.downloadBtn().addEventListener('click',downloadSvg); els.orderBtn().addEventListener('click', placeOrder); }
+        (function init(){ attachSlider(); initEvents(); updateProgressUI(); document.getElementById('year').textContent=new Date().getFullYear(); })();
     </script>
 </body>
 </html>
