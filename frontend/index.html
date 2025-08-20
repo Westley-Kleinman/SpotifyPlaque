@@ -1,74 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Custom Spotify Plaque – Modern Personal Gift</title>
-    <meta name="description" content="Design and order your custom laser‑engraved Spotify style plaque in seconds." />
-    <style>
-        :root {
-            --bg:#ffffff; --bg-alt:#f4f8fb; --bg-soft:#eef5fa; --line:#dbe6ef; --line-soft:#e6edf3;
-            --text:#0e1b27; --text-dim:#5a6d7d; --accent:#4da8ff; --accent-alt:#6bb7ff; --accent-soft:#e3f3ff;
-            --danger:#ff4d61; --radius:20px; --shadow:0 4px 18px -6px rgba(30,70,110,.15),0 2px 4px -1px rgba(40,70,110,.08);
-            --mono:ui-monospace,Menlo,Consolas,monospace; --font: 'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
-        }
-        *{box-sizing:border-box;} html,body{margin:0;font-family:var(--font);color:var(--text);-webkit-font-smoothing:antialiased;background:linear-gradient(180deg,#f9fcfe,#f0f6fb);} body{display:flex;flex-direction:column;min-height:100vh;}
-        header{padding: clamp(20px,4vw,48px) clamp(20px,5vw,70px) 10px;display:flex;flex-direction:column;gap:40px;}
-        .top{display:flex;align-items:center;gap:18px;}
-        .logo{display:flex;align-items:center;gap:14px;font-weight:600;font-size:1.05rem;letter-spacing:.5px;color:var(--text);}
-        .logo-badge{width:50px;height:50px;border-radius:16px;background:linear-gradient(140deg,var(--accent),var(--accent-alt));display:grid;place-items:center;box-shadow:0 6px 16px -6px rgba(60,140,220,.45),0 0 0 1px rgba(70,140,210,.35) inset;}
-        .logo-badge svg{width:56%;fill:#08324f;}
-        .hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:60px;align-items:start;}
-        h1{margin:0;font-size:clamp(2.4rem,6vw,3.8rem);line-height:1.02;letter-spacing:-1.6px;background:linear-gradient(90deg,#12344d,#0d2233);-webkit-background-clip:text;background-clip:text;color:transparent;}
-        .lead{font-size:clamp(1rem,1.25rem,1.25rem);line-height:1.55;color:var(--text-dim);max-width:560px;margin:24px 0 34px;}
-        .pill-row{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 34px;}
-        .pill{font-size:.65rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;background:var(--accent-soft);color:#1d4b70;padding:10px 14px 9px;border-radius:40px;border:1px solid #c7e5fb;}
-        .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:32px 30px 38px;display:flex;flex-direction:column;gap:30px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
-        .card:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.7),transparent 60%);pointer-events:none;mix-blend-mode:overlay;}
-        label{font-size:.63rem;font-weight:600;letter-spacing:.55px;text-transform:uppercase;color:var(--text-dim);display:block;margin:0 0 10px;}
-        input[type=text], input[type=email]{width:100%;padding:16px 18px 14px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--text);font:500 .95rem var(--font);letter-spacing:.3px;outline:none;transition:border-color .25s,box-shadow .25s;}
-        input[type=text]:focus,input[type=email]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(77,168,255,.3);} input::placeholder{color:#9fb2c0;}
-        .progress-wrap{display:flex;flex-direction:column;gap:8px;margin-top:-4px;}
-        .slider-shell{position:relative;height:40px;}
-        .progress-track{position:absolute;top:50%;left:0;transform:translateY(-50%);width:100%;height:12px;background:linear-gradient(180deg,#d9e7f2,#c3d9e8);border-radius:60px;box-shadow:0 2px 4px -1px rgba(50,90,130,.18) inset,0 1px 2px rgba(255,255,255,.8);}    
-        .progress-fill{position:absolute;top:50%;left:0;transform:translateY(-50%);height:12px;background:linear-gradient(90deg,var(--accent),var(--accent-alt));border-radius:60px;box-shadow:0 0 0 1px rgba(40,120,190,.3) inset,0 2px 6px -1px rgba(70,150,230,.5);} 
-        .progress-knob{position:absolute;top:50%;width:30px;height:30px;transform:translate(-50%,-50%);background:linear-gradient(160deg,#ffffff,#ecf6ff);border:1px solid #b5d9f3;border-radius:50%;display:grid;place-items:center;font-size:.55rem;font-weight:600;color:#2d6c95;box-shadow:0 6px 14px -4px rgba(40,110,170,.35),0 0 0 4px rgba(77,168,255,.18),0 0 0 1px #c2e4fb inset;cursor:grab;user-select:none;transition:box-shadow .25s,transform .2s;} .progress-knob:active{cursor:grabbing;transform:translate(-50%,-50%) scale(1.08);} 
-        .time-row{display:flex;justify-content:space-between;font:500 .7rem var(--mono);letter-spacing:.6px;color:#567086;margin-top:4px;}
-        .btn-row{display:flex;flex-wrap:wrap;gap:14px;}
-        .btn{--pad:15px 26px 14px;--grad:linear-gradient(140deg,var(--accent),var(--accent-alt));font:600 .9rem var(--font);letter-spacing:.45px;padding:var(--pad);border-radius:16px;border:1px solid #2f81c5;background:var(--grad);color:#06365a;display:inline-flex;gap:10px;align-items:center;cursor:pointer;box-shadow:0 6px 18px -6px rgba(40,120,200,.5),0 0 0 1px rgba(40,110,170,.4) inset;transition:.25s;} .btn:hover{filter:brightness(1.06);} .btn:active{transform:translateY(2px);} .btn[disabled]{opacity:.45;cursor:not-allowed;filter:none;}
-        .btn.secondary{background:#fff;border:1px solid var(--line);color:#39627d;box-shadow:0 3px 10px -4px rgba(40,100,150,.18),0 0 0 1px #dbe6ef inset;} .btn.secondary:hover{border-color:#b8cfdd;}
-        .status{background:var(--bg-soft);border:1px solid var(--line);padding:14px 16px 13px;border-radius:14px;font-size:.72rem;min-height:46px;color:#476173;white-space:pre-line;}
-        .status[data-state=error]{background:#ffe8ec;border-color:#ffc9d1;color:#c13246;}
-        .meta-line{font-size:.7rem;letter-spacing:.5px;color:#597285;min-height:20px;}
-        .preview-stage{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:26px 20px;min-height:400px;box-shadow:var(--shadow);overflow:auto;}
-        .preview-stage svg{max-width:100%;display:block;margin:0 auto;}
-        .placeholder{padding:90px 10px 60px;text-align:center;font-size:.9rem;color:#7b95a8;}
-        .order-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:28px 28px 34px;display:flex;flex-direction:column;gap:26px;box-shadow:var(--shadow);}
-        .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px;align-items:start;margin-top:70px;}
-        .order-total{font-size:1.05rem;font-weight:600;letter-spacing:.4px;color:#0d324c;}
-        .small{font-size:.65rem;letter-spacing:.5px;text-transform:uppercase;font-weight:600;color:#5b7080;margin:0 0 6px;}
-        footer{margin-top:auto;padding:70px 30px 55px;text-align:center;font-size:.65rem;color:#6b8091;}
-        .fade{animation:fade .35s ease;} @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-        .skeleton{background:linear-gradient(90deg,#e4eef5,#f4f9fc,#e4eef5);background-size:200% 100%;animation:shimmer 1.4s linear infinite;border-radius:18px;height:240px;margin:0 auto;max-width:420px;} @keyframes shimmer{to{background-position:-200% 0;}}
-    </style>
+    <title>Custom Spotify Plaque – Laser Engraved Minimal Gift</title>
+    <meta name="description" content="Design, preview, and order a clean laser‑engraved Spotify style song plaque in seconds." />
+    <meta name="keywords" content="spotify plaque, custom music plaque, laser engraved gift, song acrylic" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light" />
+    <link rel="preconnect" href="https://api.spotify.com" crossorigin>
+    <link rel="preconnect" href="https://i.scdn.co" crossorigin>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect rx='14' width='64' height='64' fill='%234da8ff'/%3E%3Cpath fill='%2308324f' d='M24 15.5c0-.8.6-1.4 1.4-1.4h13.2c.8 0 1.4.6 1.4 1.4v27.2c0 1-.9 1.6-1.8 1.1L32 37.2l-6.2 4.6c-.9.5-1.8-.1-1.8-1.1V15.5Z'/%3E%3C/svg%3E" />
+    <meta property="og:title" content="Custom Spotify Plaque" />
+    <meta property="og:description" content="Turn a track & moment into a minimal laser‑engraved plaque." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og-placeholder.png" />
+    <meta property="og:url" content="https://your-domain.example" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>document.documentElement.classList.remove('no-js');</script>
 </head>
 <body>
     <header>
         <div class="top">
-            <div class="logo"><div class="logo-badge"><svg viewBox="0 0 24 24"><path d="M8 5.5c0-.5.4-.9.9-.9h6.2c.5 0 .9.4.9.9v12.9a.9.9 0 0 1-1.4.8l-3.2-2.1-3.2 2.1a.9.9 0 0 1-1.4-.8V5.5Z"/></svg></div> Custom Spotify Plaque</div>
+            <a class="logo" href="#" aria-label="Custom Spotify Plaque home">
+                <div class="logo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" aria-label="Logo"><path d="M8 5.5c0-.5.4-.9.9-.9h6.2c.5 0 .9.4.9.9v12.9a.9.9 0 0 1-1.4.8l-3.2-2.1-3.2 2.1a.9.9 0 0 1-1.4-.8V5.5Z"/></svg></div>
+                <span>Custom Spotify Plaque</span>
+            </a>
         </div>
         <div class="hero">
             <div>
-                <h1>Your song. Your moment. On a minimal plaque.</h1>
-                <p class="lead">Search any track, lock in a lyric moment with the progress bar, and order a crisp laser‑engraved plaque. Clean, modern, made for dorm walls + thoughtful gifting.</p>
+                <h1 class="headline">Your song. Your moment. Minimal laser plaque.</h1>
+                <p class="lead">Search any track, lock a lyric moment, instantly preview the engraving layout, then order a precision‑cut acrylic plaque. Clean. Durable. Gift‑ready.</p>
                 <div class="pill-row">
                     <div class="pill">Fast Turnaround</div>
-                    <div class="pill">Laser Engraved</div>
-                    <div class="pill">Student Friendly</div>
-                    <div class="pill">Gift Ready</div>
+                        <div class="pill">Laser Engraved</div>
+                        <div class="pill">Student Friendly</div>
+                        <div class="pill">Gift Ready</div>
                 </div>
-                <div class="card" aria-labelledby="designerTitle">
-                    <h2 id="designerTitle" style="margin:0 0 4px;font-size:.7rem;letter-spacing:.55px;text-transform:uppercase;color:#5d7486;">Design Preview</h2>
+                <div class="card" aria-labelledby="designerTitle" id="designerCard">
+                    <h2 id="designerTitle" class="eyebrow">Design Preview</h2>
                     <div>
                         <label for="songInput">Track (title + artist)</label>
                         <input id="songInput" type="text" placeholder="Example: Nineties - BØRNS" autocomplete="off" spellcheck="false" />
@@ -84,10 +55,10 @@
                         <input type="hidden" id="progressTime" value="0:00" />
                     </div>
                     <div class="btn-row">
-                        <button class="btn" id="previewBtn">Preview Plaque</button>
-                        <button class="btn secondary" id="downloadBtn" disabled>Download SVG</button>
+                        <button class="btn" id="previewBtn" data-loading-text="Searching…">Preview Plaque</button>
+                        <button class="btn secondary" id="downloadBtn" disabled data-loading-text="Preparing…">Download SVG</button>
                     </div>
-                    <div class="status" id="statusBox" aria-live="polite">Idle. Search a track to start.</div>
+                    <div class="status" id="statusBox" aria-live="polite" role="status">Idle. Search a track to start.</div>
                     <div class="meta-line" id="metaLine"></div>
                 </div>
             </div>
@@ -99,66 +70,43 @@
 
     <section class="split" aria-label="Order">
         <div class="order-card">
-            <h2 style="margin:0;font-size:.75rem;letter-spacing:.6px;text-transform:uppercase;color:#5d7486;">Order Your Plaque</h2>
-            <p style="margin:0;font-size:.85rem;line-height:1.5;color:#5a6f80;">One standard size plaque. We engrave exactly what you preview (album art outline only). Enter your contact details and place the order.</p>
+            <h2 class="eyebrow" id="orderHeading">Order Your Plaque</h2>
+            <p class="body-sm" aria-describedby="orderHeading">One standard size plaque. We engrave exactly what you preview (album art outline only). Provide your details to place a production order.</p>
             <div>
                 <label for="custName">Name</label>
-                <input id="custName" type="text" placeholder="Your name" />
+                <input id="custName" type="text" placeholder="Your name" autocomplete="name" required />
             </div>
             <div>
                 <label for="custEmail">Email</label>
-                <input id="custEmail" type="email" placeholder="you@school.edu" />
+                <input id="custEmail" type="email" placeholder="you@school.edu" autocomplete="email" required />
             </div>
             <div>
                 <label for="custNotes">Notes (optional)</label>
                 <input id="custNotes" type="text" placeholder="Any special instructions" />
             </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
-                <div class="order-total">$24.99 <span style="font-size:.65rem;font-weight:600;letter-spacing:.5px;color:#5b6f80;margin-left:6px;">Intro Price</span></div>
-                <button class="btn" id="orderBtn" disabled>Place Order</button>
+            <div class="order-bar">
+                <div class="order-total">$24.99 <span class="badge-sub">Intro Price</span></div>
+                <button class="btn" id="orderBtn" disabled data-loading-text="Submitting…">Place Order</button>
             </div>
-            <div class="status" id="orderStatus" style="min-height:42px;">Awaiting preview…</div>
+            <div class="status" id="orderStatus" style="min-height:42px;" role="status" aria-live="polite">Awaiting preview…</div>
         </div>
-        <div class="card" style="gap:20px;">
-            <h2 style="margin:0;font-size:.75rem;letter-spacing:.6px;text-transform:uppercase;color:#5d7486;">What You Get</h2>
-            <ul style="margin:0;padding:0 0 0 18px;display:flex;flex-direction:column;gap:10px;font-size:.8rem;line-height:1.4;color:#4b6273;">
+        <div class="card benefits" style="gap:20px;">
+            <h2 class="eyebrow" id="benefitsHeading">What You Get</h2>
+            <ul class="benefits-list" aria-labelledby="benefitsHeading">
                 <li>Crisp laser engraving (all black fill) + precise red cut outline</li>
                 <li>Album art placeholder rectangle only (no raster image)</li>
                 <li>Durable acrylic – easy to mount or display</li>
                 <li>Turnaround typically 3–5 business days</li>
                 <li>Designed for college / dorm aesthetics</li>
             </ul>
-            <div style="font-size:.65rem;line-height:1.5;color:#6a7f90;margin-top:4px;">Not affiliated with Spotify. For personal gifting & decor.</div>
+            <div class="legal">Not affiliated with Spotify. For personal gifting & decor.</div>
         </div>
     </section>
 
     <footer>
-        &copy; <span id="year"></span> Custom Spotify Plaque • Built for students. Red = cut. Black = engrave.
+        &copy; <span id="year"></span> Custom Spotify Plaque • Red = cut • Black = engrave • Educational / personal use only.
     </footer>
 
-    <script>
-        const API_BASE = (()=>{ try { const o=location.origin||''; if(!/^https?:/i.test(o)) return 'http://localhost:3001/api'; return o.replace(/\/$/,'')+'/api'; } catch { return 'http://localhost:3001/api'; } })();
-        const qs=id=>document.getElementById(id);
-        const els={ song:()=>qs('songInput'), knob:()=>qs('progressKnob'), bar:()=>qs('progressBar'), fill:()=>qs('progressFill'), cur:()=>qs('currentTime'), total:()=>qs('totalTime'), hidden:()=>qs('progressTime'), previewBtn:()=>qs('previewBtn'), downloadBtn:()=>qs('downloadBtn'), stage:()=>qs('previewStage'), status:()=>qs('statusBox'), meta:()=>qs('metaLine'), orderBtn:()=>qs('orderBtn'), orderStatus:()=>qs('orderStatus'), name:()=>qs('custName'), email:()=>qs('custEmail'), notes:()=>qs('custNotes') };
-        let trackDurationSec=0,currentSec=0,dragging=false,lastSvg='',lastMeta=null,debounceId,isLoading=false;
-        const format=sec=>{const m=Math.floor(sec/60);const s=sec%60;return `${m}:${String(s).padStart(2,'0')}`};
-        function setStatus(msg,err=false){ const b=els.status(); b.textContent=msg; b.dataset.state=err?'error':'normal'; }
-        function setOrderStatus(msg,err=false){ const b=els.orderStatus(); b.textContent=msg; b.dataset.state=err?'error':'normal'; }
-        const pct=()=>trackDurationSec? currentSec/trackDurationSec : 0;
-        function updateProgressUI(){ const p=(pct()*100).toFixed(3); els.knob().style.left=p+'%'; els.fill().style.width=p+'%'; els.cur().textContent=format(currentSec); els.hidden().value=format(currentSec); els.bar().setAttribute('aria-valuenow',currentSec); }
-        function seek(clientX){ const rect=els.bar().getBoundingClientRect(); let x=Math.max(0,Math.min(rect.width,clientX-rect.left)); const frac=x/rect.width; currentSec=Math.min(trackDurationSec,Math.round(frac*trackDurationSec)); updateProgressUI(); }
-        function attachSlider(){ const bar=els.bar(),knob=els.knob(); bar.addEventListener('mousedown',e=>{ if(e.target===knob){dragging=true;} else {seek(e.clientX); previewDebounced();}}); document.addEventListener('mousemove',e=>{ if(!dragging)return; seek(e.clientX);}); document.addEventListener('mouseup',()=>{ if(dragging){dragging=false; previewDebounced();}}); bar.addEventListener('keydown',e=>{ if(!trackDurationSec) return; let d=0; if(['ArrowRight','ArrowUp'].includes(e.key)) d=1; else if(['ArrowLeft','ArrowDown'].includes(e.key)) d=-1; else if(e.key==='Home'){currentSec=0;} else if(e.key==='End'){currentSec=trackDurationSec;} else return; currentSec=Math.min(trackDurationSec,Math.max(0,currentSec+d)); updateProgressUI(); previewDebounced(); e.preventDefault(); }); }
-        async function fetchMetadata(q){ const body=JSON.stringify({query:q}); const r=await fetch(`${API_BASE}/spotify-metadata`,{method:'POST',headers:{'Content-Type':'application/json'},body}); const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.error||'Lookup failed'); return j.data; }
-        async function fetchPreview(q,progressTime){ const r=await fetch(`${API_BASE}/preview-plaque`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,progressTime})}); const t=await r.text(); if(!r.ok||!t.startsWith('<?xml')) throw new Error('Preview failed'); return t; }
-        function renderSvg(svg){ const stage=els.stage(); if(!svg){stage.innerHTML='<div class="placeholder">No preview</div>';return;} stage.innerHTML=svg; stage.classList.add('fade'); setTimeout(()=>stage.classList.remove('fade'),380); }
-        function showSkeleton(){ els.stage().innerHTML='<div class="skeleton"></div>'; }
-        async function preview(){ const q=els.song().value.trim(); if(!q){ setStatus('Enter a track (song + artist)'); return; } setStatus('Searching track…'); els.previewBtn().disabled=true; isLoading=true; showSkeleton(); try{ const meta=await fetchMetadata(q); lastMeta=meta; if(meta.duration){ const [m,s]=meta.duration.split(':').map(Number); trackDurationSec=m*60+s; els.bar().setAttribute('aria-valuemax',trackDurationSec); if(currentSec>trackDurationSec) currentSec=Math.round(trackDurationSec*0.4); els.total().textContent=meta.duration; } else { trackDurationSec=0; els.total().textContent='--:--'; } updateProgressUI(); setStatus('Rendering preview…'); const svg=await fetchPreview(q,els.hidden().value); lastSvg=svg; renderSvg(svg); setStatus('Preview ready'); els.meta().textContent=`${meta.title} • ${meta.artist}`; els.downloadBtn().disabled=false; els.orderBtn().disabled=false; setOrderStatus('Ready to order'); }
-        catch(e){ console.error(e); setStatus(e.message,true); renderSvg(null); els.downloadBtn().disabled=true; els.orderBtn().disabled=true; els.meta().textContent=''; setOrderStatus('Awaiting valid preview',true);} finally { els.previewBtn().disabled=false; isLoading=false; }}
-        const previewDebounced=()=>{ clearTimeout(debounceId); debounceId=setTimeout(preview,520); };
-        async function downloadSvg(){ const q=els.song().value.trim(); if(!q) return; try{ setStatus('Generating clean SVG…'); els.downloadBtn().disabled=true; const r=await fetch(`${API_BASE}/generate-plaque`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,progressTime:els.hidden().value,style:'minimal'})}); const svg=await r.text(); if(!r.ok||!svg.startsWith('<?xml')) throw new Error('Generation failed'); const name=`spotify-plaque-${Date.now()}.svg`; const blob=new Blob([svg],{type:'image/svg+xml'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setStatus('SVG downloaded'); }catch(e){ setStatus(e.message||'Download failed',true);} finally{ els.downloadBtn().disabled=false; }}
-        async function placeOrder(){ if(!lastMeta){ setOrderStatus('Preview a track first',true); return;} const name=els.name().value.trim(); const email=els.email().value.trim(); if(!name||!email){ setOrderStatus('Name & email required',true); return; } setOrderStatus('Placing order…'); try{ const body={ customer:{ name,email,notes:els.notes().value.trim() }, track:{ title:lastMeta.title, artist:lastMeta.artist, duration:lastMeta.duration, progress:els.hidden().value }, selection:{}, codes:[] }; const r=await fetch(`${API_BASE}/checkout`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.error||'Order failed'); setOrderStatus('Order placed #' + j.order.id); els.orderBtn().disabled=true; }catch(e){ setOrderStatus(e.message||'Order failed',true); }}
-        function initEvents(){ els.song().addEventListener('input',previewDebounced); els.song().addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); preview(); }}); els.previewBtn().addEventListener('click',preview); els.downloadBtn().addEventListener('click',downloadSvg); els.orderBtn().addEventListener('click', placeOrder); }
-        (function init(){ attachSlider(); initEvents(); updateProgressUI(); document.getElementById('year').textContent=new Date().getFullYear(); })();
-    </script>
+    <script src="app.js" defer></script>
 </body>
 </html>
