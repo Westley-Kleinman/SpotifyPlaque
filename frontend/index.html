@@ -160,7 +160,7 @@
 
     <script>
         // ---- Config & Element Helpers ----
-        const API_BASE = (()=>{ try { const o = window.location.origin||''; if(!/^https?:/i.test(o)) return 'http://localhost:3001/api'; return o.replace(/\/$/,'') + '/api'; } catch{ return 'http://localhost:3001/api'; } })();
+        const API_BASE = 'https://spotifyplaque.onrender.com/api';
         const qs = id => document.getElementById(id);
         const els = {
             song:()=>qs('songInput'), knob:()=>qs('progressKnob'), bar:()=>qs('progressBar'), fill:()=>qs('progressFill'),
