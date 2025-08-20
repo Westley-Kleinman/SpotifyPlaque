@@ -1,0 +1,39 @@
+{
+  "name": "spotify-plaque-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Spotify metadata fetching",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+  "test": "jest",
+  "test:watch": "jest --watch",
+  "clean": "node scripts/clean-artifacts.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "isomorphic-unfetch": "^4.0.2",
+    "spotify-url-info": "^2.2.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "rootDir": "."
+  },
+  "keywords": [
+    "spotify",
+    "metadata",
+    "api",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT"
+}
