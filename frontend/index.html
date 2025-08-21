@@ -527,26 +527,28 @@
 
         dom.cartItems.innerHTML = '';
         if (cart.length === 0) {
-            dom.cartItems.appendChild(dom.empty-cart-msg);
+            // This line was previously trying to append the message element itself,
+            // but it's already in the DOM. We just show/hide it.
+            // The 'empty-cart-msg' is now controlled by the display style property above.
+        } else {
+            cart.forEach((item, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'cart-item';
+                itemEl.innerHTML = `
+                    <img src="${item.meta.image}" alt="${item.meta.title}" class="cart-item-img">
+                    <div class="cart-item-info">
+                        <h4>${item.meta.title}</h4>
+                        <p>${item.meta.artist}</p>
+                        <p>Time: ${formatTime(item.progress)}</p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button class="btn btn-secondary remove-from-cart-btn" data-index="${index}">Remove</button>
+                        <button class="btn btn-primary download-plaque-btn" id="download-btn-${item.id}" data-index="${index}">Download Files</button>
+                    </div>
+                `;
+                dom.cartItems.appendChild(itemEl);
+            });
         }
-
-        cart.forEach((item, index) => {
-            const itemEl = document.createElement('div');
-            itemEl.className = 'cart-item';
-            itemEl.innerHTML = `
-                <img src="${item.meta.image}" alt="${item.meta.title}" class="cart-item-img">
-                <div class="cart-item-info">
-                    <h4>${item.meta.title}</h4>
-                    <p>${item.meta.artist}</p>
-                    <p>Time: ${formatTime(item.progress)}</p>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <button class="btn btn-secondary remove-from-cart-btn" data-index="${index}">Remove</button>
-                    <button class="btn btn-primary download-plaque-btn" id="download-btn-${item.id}" data-index="${index}">Download Files</button>
-                </div>
-            `;
-            dom.cartItems.appendChild(itemEl);
-        });
 
         const subtotal = cart.length * PLAQUE_PRICE;
         dom.subtotal.textContent = `$${subtotal.toFixed(2)}`;
