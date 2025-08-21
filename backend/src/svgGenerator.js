@@ -108,6 +108,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const leftTimeX = barX;              // Left timestamp at bar start
   const rightTimeX = barX + barWidth;  // Right timestamp at bar end
   const textLeftX = barX;              // Title and artist aligned with progress bar left edge
+  const timesY = barY + barHeight + 25; // Y position for timestamps, below the bar
 
   const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}">
