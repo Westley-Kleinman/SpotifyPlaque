@@ -43,7 +43,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const engraveFill = isPreview ? '#334155' : '#000000'; // Darker gray for preview, black for final cut file
   const lightFill = isPreview ? '#64748B' : '#f1f2f2';   // A mid-gray for contrast elements in preview
   const plaqueFill = 'transparent';                       // Plaque is always transparent
-  const plaqueStroke = isPreview ? 'rgba(0,0,0,0.1)' : '#000000'; // Faint outline in preview, black for final
+  const plaqueStroke = isPreview ? 'transparent' : '#000000'; // Faint outline in preview, black for final
   const cutOutlineColor = isPreview ? 'transparent' : '#ff0000'; // Hide cut line in preview
 
   // Time calculation based on progress
