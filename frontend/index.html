@@ -637,9 +637,36 @@
 
     // --- Event Listeners ---
     const initEvents = () => {
-        // ... (keep existing listeners)
+        // Designer
+        dom.previewBtn.addEventListener('click', designPlaque);
+        dom.songInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                designPlaque();
+            }
+        });
 
-        // Cart Event Listener (Delegated)
+        // Slider
+        dom.progressBar.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            handleSeek(e.clientX);
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) handleSeek(e.clientX);
+        });
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                designPlaque(); // Re-design on drop
+            }
+        });
+
+        // Cart
+        dom.addToCartBtn.addEventListener('click', addToCart);
+        dom.cartBtn.addEventListener('click', () => {
+            dom.cartSection.style.display = 'block';
+            window.scrollTo(0, dom.cartSection.offsetTop - 80);
+        });
         dom.cartItems.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-from-cart-btn')) {
                 removeFromCart(parseInt(e.target.dataset.index, 10));
@@ -648,6 +675,16 @@
                 const item = cart[parseInt(e.target.dataset.index, 10)];
                 requestDownload(item);
             }
+        });
+
+        // Checkout
+        dom.checkoutBtn.addEventListener('click', () => {
+            dom.checkoutSection.style.display = 'block';
+            window.scrollTo(0, dom.checkoutSection.offsetTop - 80);
+        });
+        get('checkout-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Checkout functionality with Stripe is the next step!');
         });
 
         // Admin
