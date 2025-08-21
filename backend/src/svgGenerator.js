@@ -44,7 +44,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const lightFill = isPreview ? '#64748B' : '#f1f2f2';   // A mid-gray for contrast elements in preview
   const plaqueFill = 'transparent';                       // Plaque is always transparent
   const plaqueStroke = isPreview ? 'rgba(255,255,255,0.2)' : '#000000'; // Faint outline in preview, black for final
-  const cutOutlineColor = isPreview ? 'transparent' : '#ff0000'; // Use engrave color for preview outline, red for final cut
+  const cutOutlineColor = isPreview ? engraveFill : '#ff0000'; // Use engrave color for preview outline, red for final cut
 
   // Time calculation based on progress
   const [m, s] = duration.split(':').map(Number);
@@ -117,7 +117,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
       /* White (non-engrave) areas / placeholders */
       .cls-1 { fill: ${plaqueFill}; stroke-width: .4px; stroke: ${plaqueStroke}; stroke-miterlimit:10; }
       /* Light (non-engrave) interior fill (e.g., play triangle contrast) */
-      .light-fill { fill:transparent; stroke:none; }
+      .light-fill { fill:${lightFill}; stroke:none; }
       /* Engrave: every solid dark element to be raster engraved */
       .engrave { fill:${engraveFill}; stroke:none; }
       /* Red cutting outline for perimeter */
