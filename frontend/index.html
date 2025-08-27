@@ -385,6 +385,7 @@
         statusBox: get('statusBox'),
         previewStage: get('previewStage'),
         addToCartBtn: get('addToCartBtn'),
+        cartBtn: get('cartBtn'),
         sizeModal: get('size-modal'),
         confirmAddToCartBtn: get('confirm-add-to-cart-btn'),
         cancelAddToCartBtn: get('cancel-add-to-cart-btn'),
@@ -672,13 +673,6 @@
                 designPlaque();
             }
         });
-        dom.previewBtn.addEventListener('click', designPlaque);
-        dom.songInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                designPlaque();
-            }
-        });
 
         // Slider
         dom.progressBar.addEventListener('mousedown', (e) => {
@@ -748,10 +742,6 @@
                 console.error('Checkout error:', error);
                 alert('Failed to start checkout. Please try again.');
             }
-        });
-        get('checkout-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Checkout functionality with Stripe is the next step!');
         });
 
         // Admin
