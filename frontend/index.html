@@ -411,7 +411,6 @@
         previewBtn: get('previewBtn'),
         statusBox: get('statusBox'),
         previewStage: get('previewStage'),
-        startDesigningBtn: get('startDesigningBtn'),
         addToCartBtn: get('addToCartBtn'),
         cartBtn: get('cartBtn'),
         cartCount: get('cartCount'),
@@ -654,15 +653,6 @@
 
     // --- Event Listeners ---
     const initEvents = () => {
-        dom.startDesigningBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            dom.songInput.focus();
-            window.scrollTo({
-                top: dom.designer.offsetTop - 80,
-                behavior: 'smooth'
-            });
-        });
-
         // Designer
         dom.previewBtn.addEventListener('click', designPlaque);
         dom.previewBtn.addEventListener('click', designPlaque);
