@@ -41,7 +41,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   // When isPreview true, we simulate the look of a clear plaque.
   // Engraved parts become light, and the plaque itself is transparent.
   const engraveFill = isPreview ? '#334155' : '#000000'; // Darker gray for preview, black for final cut file
-  const lightFill = isPreview ? '#64748B' : '#f1f2f2';   // A mid-gray for contrast elements in preview
+  const lightFill = isPreview ? '#FFFFFF' : '#FFFFFF';   // A mid-gray for contrast elements in preview
   const plaqueFill = 'transparent';                       // Plaque is always transparent
   const plaqueStroke = isPreview ? 'transparent' : '#000000'; // Faint outline in preview, black for final
   const cutOutlineColor = isPreview ? 'transparent' : '#ff0000'; // Hide cut line in preview
