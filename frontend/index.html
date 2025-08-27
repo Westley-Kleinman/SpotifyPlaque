@@ -277,6 +277,16 @@
                         <label for="songInput">Song Search</label>
                         <input id="songInput" type="text" spellcheck="false" autocomplete="off" placeholder="e.g., Bohemian Rhapsody Queen">
                     </div>
+                    <div class="field">
+                        <label for="progressKnob">Progress Position</label>
+                        <div class="progress-bar-container" id="progressBar">
+                            <div class="progress-track"></div>
+                            <div class="progress-fill" id="progressFill"></div>
+                            <div class="progress-knob" id="progressKnob"></div>
+                        </div>
+                        <div class="time-display"><span id="currentTime">0:00</span><span id="totalTime">--:--</span></div>
+                    </div>
+                    <button class="btn btn-primary" id="previewBtn" style="width: 100%;">Design Plaque</button>
                     <div class="status-box" id="statusBox">Enter a song to begin.</div>
                 </div>
                 <div class="panel">
@@ -289,50 +299,6 @@
                     </button>
                 </div>
             </div>
-        .size-selector {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .size-selector label {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--slate-300);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .size-selector label:has(input:checked) {
-            background-color: var(--blue-50);
-            border-color: var(--blue-500);
-            color: var(--blue-600);
-            font-weight: 600;
-        }
-        .size-selector input {
-            accent-color: var(--blue-500);
-        }
-        .preview-stage.large-plaque {
-            width: 794px;
-            height: 1123px;
-            max-width: 100%;
-            aspect-ratio: 794/1123;
-        }
-        .preview-stage.small-plaque {
-            width: 360px;
-            height: 720px;
-            max-width: 100%;
-            aspect-ratio: 360/720;
-        }
-        @media (max-width: 900px) {
-            .preview-stage.large-plaque { width: 90vw; height: auto; }
-            .preview-stage.small-plaque { width: 60vw; height: auto; }
-        }
-        @media (max-width: 600px) {
-            .preview-stage.large-plaque { width: 100vw; height: auto; }
-            .preview-stage.small-plaque { width: 90vw; height: auto; }
-        }
         </section>
 
         <section id="cart-section" class="section">
@@ -528,10 +494,6 @@
             return;
         }
 
-        const selectedSize = document.querySelector('input[name="plaque-size"]:checked').value;
-        dom.previewStage.classList.remove('large-plaque', 'small-plaque');
-        dom.previewStage.classList.add(selectedSize === 'large' ? 'large-plaque' : 'small-plaque');
-
         setStatus('Fetching song data...');
         dom.previewBtn.disabled = true;
         dom.addToCartBtn.disabled = true;
@@ -702,6 +664,7 @@
         });
 
         // Designer
+        dom.previewBtn.addEventListener('click', designPlaque);
         dom.previewBtn.addEventListener('click', designPlaque);
         dom.songInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
