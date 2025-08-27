@@ -294,14 +294,51 @@
                 </div>
                 <div class="panel">
                     <h2 class="panel-title">2. Live Preview</h2>
-                    <div class="preview-stage" id="previewStage">
-                        <div class="placeholder">Your design will appear here</div>
+                    <div style="display: flex; flex-direction: column; gap: 2rem; align-items: center;">
+                        <div class="preview-size-label" style="font-weight:600; color:var(--slate-700); margin-bottom:0.5rem;">Large Plaque (Sheet Size)</div>
+                        <div class="preview-stage plaque-large" style="width: 794px; height: 1123px; max-width: 100%; aspect-ratio: 794/1123; box-shadow: var(--shadow-lg);">
+                            <div class="placeholder">Large plaque preview will appear here</div>
+                        </div>
+                        <div class="preview-size-label" style="font-weight:600; color:var(--slate-700); margin:1.5rem 0 0.5rem;">Small Plaque (Phone Size)</div>
+                        <div class="preview-stage plaque-small" style="width: 360px; height: 720px; max-width: 100%; aspect-ratio: 360/720; box-shadow: var(--shadow-lg);">
+                            <div class="placeholder">Small plaque preview will appear here</div>
+                        </div>
                     </div>
                     <button class="btn btn-secondary" id="addToCartBtn" style="width: 100%; margin-top: 1.5rem;" disabled>
                         Add to Cart
                     </button>
                 </div>
             </div>
+        /* Plaque preview sizes */
+        .plaque-large {
+            background: var(--white);
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        .plaque-small {
+            background: var(--white);
+            border: 2px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-size-label {
+            font-size: 1rem;
+            letter-spacing: 0.02em;
+        }
+        @media (max-width: 900px) {
+            .plaque-large { width: 90vw; height: auto; aspect-ratio: 794/1123; }
+            .plaque-small { width: 60vw; height: auto; aspect-ratio: 360/720; }
+        }
+        @media (max-width: 600px) {
+            .plaque-large { width: 100vw; height: auto; aspect-ratio: 794/1123; }
+            .plaque-small { width: 90vw; height: auto; aspect-ratio: 360/720; }
+        }
         </section>
 
         <section id="cart-section" class="section">
