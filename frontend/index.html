@@ -265,9 +265,7 @@
             <div class="container">
                 <h1>Your Vibe, Immortalized.</h1>
                 <p>Design a custom, laser-ready plaque for any song on Spotify. The perfect gift for music lovers, or a timeless piece for your own space.</p>
-                <a href="#designer" class="btn btn-primary" id="startDesigningBtn">
-                    Start Designing
-                </a>
+                
             </div>
         </section>
 
@@ -279,29 +277,6 @@
                         <label for="songInput">Song Search</label>
                         <input id="songInput" type="text" spellcheck="false" autocomplete="off" placeholder="e.g., Bohemian Rhapsody Queen">
                     </div>
-                    <div class="field">
-                        <label for="progressKnob">Progress Position</label>
-                        <div class="progress-bar-container" id="progressBar">
-                            <div class="progress-track"></div>
-                            <div class="progress-fill" id="progressFill"></div>
-                            <div class="progress-knob" id="progressKnob"></div>
-                        </div>
-                        <div class="time-display"><span id="currentTime">0:00</span><span id="totalTime">--:--</span></div>
-                    </div>
-                    <div class="field">
-                        <label>Plaque Size</label>
-                        <div class="size-selector">
-                            <label>
-                                <input type="radio" name="plaque-size" value="large" checked>
-                                <span>Large (8.5" x 11")</span>
-                            </label>
-                            <label>
-                                <input type="radio" name="plaque-size" value="small">
-                                <span>Small (4" x 6")</span>
-                            </label>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" id="previewBtn" style="width: 100%;">Design Plaque</button>
                     <div class="status-box" id="statusBox">Enter a song to begin.</div>
                 </div>
                 <div class="panel">
@@ -428,6 +403,23 @@
             <p>This is a portfolio project. Not a real store.</p>
         </div>
     </footer>
+
+        <div id="size-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
+            <div class="panel" style="width: 320px;">
+                <h2 class="panel-title">Select Plaque Size</h2>
+                <div class="size-selector" style="flex-direction: column;">
+                    <label>
+                        <input type="radio" name="modal-plaque-size" value="large" checked>
+                        <span>Large (8.5" x 11") - $39.99</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="modal-plaque-size" value="small">
+                        <span>Small (4" x 6") - $29.99</span>
+                    </label>
+                </div>
+                <button id="confirm-add-to-cart-btn" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">Add to Cart</button>
+            </div>
+        </div>
 
         <div id="admin-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
         <div class="panel" style="width: 320px;">
