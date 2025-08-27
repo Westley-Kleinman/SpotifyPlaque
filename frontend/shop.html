@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Shop • Custom Spotify Plaques</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#0e1114;color:#f4f7f8;-webkit-font-smoothing:antialiased;}
+ a{color:#1db954;text-decoration:none;} a:hover{text-decoration:underline;}
+ header{display:flex;align-items:center;justify-content:space-between;padding:20px 38px;background:#12181d;position:sticky;top:0;z-index:10;border-bottom:1px solid #1e252b;} 
+ .logo{font-weight:700;font-size:1.1rem;letter-spacing:.5px;display:flex;gap:10px;align-items:center;}
+ .logo-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#1db954,#178741);box-shadow:0 4px 14px -4px rgba(0,0,0,.6);} 
+ nav a{margin-left:26px;font-size:.9rem;font-weight:600;color:#c9d5da;} nav a:hover{color:#fff;}
+ main{max-width:1180px;margin:0 auto;padding:50px clamp(20px,4vw,46px) 80px;}
+ h1{margin:0 0 14px;font-size:clamp(2.1rem,5vw,3.1rem);letter-spacing:-1.5px;line-height:1.05;background:linear-gradient(90deg,#fff,#c8f5dd);-webkit-background-clip:text;background-clip:text;color:transparent;}
+ .lead{max-width:740px;font-size:1.05rem;line-height:1.5;color:#a5b5be;margin:0 0 44px;}
+ .grid{display:grid;gap:40px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
+ .card{background:linear-gradient(160deg,#192228,#141b21);border:1px solid #223038;border-radius:20px;padding:26px 26px 30px;display:flex;flex-direction:column;gap:22px;position:relative;box-shadow:0 12px 34px -14px rgba(0,0,0,.7),0 0 0 1px #223038 inset;}
+ .card::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(110deg,rgba(255,255,255,.05),transparent 40%,transparent 60%,rgba(255,255,255,.04));pointer-events:none;mix-blend-mode:overlay;}
+ .price{font-size:1.2rem;font-weight:600;color:#fff;}
+ button.add{--accent:#1db954;cursor:pointer;background:linear-gradient(140deg,var(--accent),#1ed760);border:1px solid #0e2d18;color:#072414;font-weight:600;font-size:.9rem;padding:14px 20px;border-radius:14px;box-shadow:0 6px 18px -6px rgba(0,0,0,.65),0 0 0 1px rgba(0,0,0,.55) inset;display:inline-flex;align-items:center;gap:8px;letter-spacing:.4px;} 
+ button.add:hover{filter:brightness(1.06);} button.add:active{transform:translateY(2px);} 
+ .options{display:flex;flex-wrap:wrap;gap:14px;margin-top:4px;}
+ .opt-group{flex:1 1 100%;}
+ .opt-group h4{margin:10px 0 8px;font-size:.65rem;letter-spacing:.6px;text-transform:uppercase;color:#7d929d;}
+ .pills{display:flex;flex-wrap:wrap;gap:8px;}
+ .pill{padding:8px 13px 7px;border:1px solid #2b3941;background:#1d262c;border-radius:30px;font-size:.7rem;font-weight:600;letter-spacing:.5px;color:#afbcc2;cursor:pointer;user-select:none;}
+ .pill.active{background:#1db954;color:#062813;border-color:#1db954;}
+ .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#121a21;border:1px solid #223038;padding:14px 20px 13px;border-radius:12px;font-size:.8rem;font-weight:500;color:#dfecef;box-shadow:0 10px 30px -12px rgba(0,0,0,.7);opacity:0;pointer-events:none;transition:.4s;}
+ .toast.show{opacity:1;transform:translate(-50%,0);} 
+ footer{padding:60px 0 50px;text-align:center;font-size:.65rem;color:#6d808b;}
+ @media (max-width:720px){ header{padding:18px 22px;} nav a{margin-left:18px;} h1{font-size:2.3rem;} }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon"><svg viewBox="0 0 24 24" width="22" fill="#0d150f"><path d="M8 5.5c0-.5.4-.9.9-.9h6.2c.5 0 .9.4.9.9v12.9a.9.9 0 0 1-1.4.8l-3.2-2.1-3.2 2.1a.9.9 0 0 1-1.4-.8V5.5Z"/></svg></div> Plaques</div>
+  <nav>
+    <a href="/shop.html">Shop</a>
+    <a href="/index.html">Designer</a>
+    <a href="#" id="cartLink">Cart <span id="cartCount" style="background:#1db954;color:#052612;font-size:.6rem;padding:3px 7px 2px;border-radius:30px;margin-left:4px;min-width:14px;display:inline-block;text-align:center;">0</span></a>
+  </nav>
+</header>
+<main>
+  <h1>Build a plaque that plays to your vibe.</h1>
+  <p class="lead">Custom laser‑engraved Spotify style plaques. Pick your track, choose material + size, add an optional stand. Perfect for dorm decor, gifts, mixtape nostalgia, or subtle flexes.</p>
+  <div id="productGrid" class="grid"></div>
+</main>
+<div class="toast" id="toast">Added to cart</div>
+<footer>&copy; <span id="year"></span> Campus Plaques • Made for students. Not affiliated with Spotify.</footer>
+<script>
+const API_BASE = location.origin.replace(/\/$/,'') + '/api';
+const cart = JSON.parse(localStorage.getItem('plaque-cart')||'[]');
+const cartCount = ()=> cart.reduce((a,i)=>a+i.qty,0);
+function saveCart(){ localStorage.setItem('plaque-cart', JSON.stringify(cart)); document.getElementById('cartCount').textContent = cartCount(); }
+saveCart();
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2400); }
+function fetchProducts(){ return fetch(API_BASE+'/products').then(r=>r.json()).then(j=>j.products); }
+function renderProducts(list){ const grid=document.getElementById('productGrid'); grid.innerHTML=''; list.forEach(p=>{ const card=document.createElement('div'); card.className='card'; card.innerHTML=`<div><h3 style="margin:0 0 6px;font-size:1.15rem;letter-spacing:-.5px;color:#fff;">${p.name}</h3><div style="font-size:.8rem;line-height:1.4;color:#8fa2ad;">${p.description}</div></div><div class="price" data-base="${p.basePrice}">$${p.basePrice.toFixed(2)}</div><div class="options" id="opts-${p.id}"></div><div><button class="add" data-id="${p.id}">Add to Cart</button></div>`; grid.appendChild(card); renderOptions(p); }); }
+function renderOptions(prod){ const wrap=document.getElementById('opts-'+prod.id); const groups=prod.options; Object.entries(groups).forEach(([group, arr])=>{ const g=document.createElement('div'); g.className='opt-group'; g.innerHTML=`<h4>${group}</h4><div class='pills' id='${prod.id}-${group}'></div>`; wrap.appendChild(g); const pills= g.querySelector('.pills'); arr.forEach(opt=>{ const b=document.createElement('div'); b.className='pill'+(opt.default?' active':''); b.textContent=opt.label; b.dataset.id=opt.id; b.dataset.group=group; b.dataset.priceDelta=opt.priceDelta; b.addEventListener('click',()=>{ [...pills.children].forEach(c=>c.classList.remove('active')); b.classList.add('active'); updateCardPrice(prod.id); }); pills.appendChild(b); }); }); }
+function currentSelection(prodId){ const sel={}; document.querySelectorAll(`#opts-${prodId} .pill.active`).forEach(p=> sel[p.dataset.group]=p.dataset.id); return sel; }
+function updateCardPrice(prodId){ const selection=currentSelection(prodId); const base=document.querySelector(`[data-base]`); fetch(API_BASE+'/price-estimate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ selection })}).then(r=>r.json()).then(j=>{ if(j.success!==false){ base.textContent='$'+j.total.toFixed(2); } }); }
+addEventListener('click', e=>{ if(e.target.matches('button.add')){ const id=e.target.dataset.id; const sel=currentSelection(id); const item = cart.find(i=>i.id===id && JSON.stringify(i.sel)===JSON.stringify(sel)); if(item) item.qty++; else cart.push({ id, sel, qty:1 }); saveCart(); toast('Added to cart'); } });
+fetchProducts().then(renderProducts);
+ document.getElementById('year').textContent=new Date().getFullYear();
+ document.getElementById('cartLink').addEventListener('click', e=>{ e.preventDefault(); location.href='/cart.html'; });
+</script>
+</body>
+</html>
