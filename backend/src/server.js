@@ -5,8 +5,10 @@
  * Main endpoint: POST /api/spotify-metadata
  */
 
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { fetchSpotifyMetadata, fetchSpotifyMetadataFlexible } = require('./spotifyMetadata');
 const { generateSpotifyPlaqueSVG, generateDetailedPlaqueSVG } = require('./svgGenerator');
 const { products, discounts } = require('./products');
@@ -270,6 +272,62 @@ app.use('*', (req, res) => {
     message: `The requested endpoint ${req.method} ${req.originalUrl} does not exist`
   });
 });
+
+/**
+ * POST /api/create-checkout-session
+ * Creates a Stripe checkout session for cart items
+ */
+app.post('/api/create-checkout-session', async (req, res) => {
+  try {
+    const { items } = req.body;
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'No items provided' });
+    }
+
+    // Convert cart items to Stripe line items
+    const line_items = items.map(item => ({
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: `${item.size === 'large' ? 'Large' : 'Small'} Spotify Plaque - ${item.meta.title}`,
+          description: `Artist: ${item.meta.artist} | Progress: ${formatTime(item.progress)}`,
+          images: [item.meta.image],
+        },
+        unit_amount: item.size === 'large' ? 3999 : 2999, // $39.99 for large, $29.99 for small
+      },
+      quantity: 1,
+    }));
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items,
+      mode: 'payment',
+      success_url: `${req.headers.origin || 'http://localhost:3001'}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin || 'http://localhost:3001'}?canceled=true`,
+      metadata: {
+        items: JSON.stringify(items.map(item => ({
+          title: item.meta.title,
+          artist: item.meta.artist,
+          progress: item.progress,
+          size: item.size
+        })))
+      }
+    });
+
+    res.json({ id: session.id });
+  } catch (error) {
+    console.error('Stripe checkout error:', error);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+
+// Helper function for formatting time
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 /**
  * Global error handler
