@@ -433,7 +433,8 @@
         totalTime: get('totalTime'),
         previewBtn: get('previewBtn'),
         statusBox: get('statusBox'),
-        previewStage: get('previewStage'),
+        previewStageLarge: get('previewStageLarge'),
+        previewStageSmall: get('previewStageSmall'),
         addToCartBtn: get('addToCartBtn'),
         cartBtn: get('cartBtn'),
         cartCount: get('cartCount'),
@@ -519,7 +520,8 @@
         setStatus('Fetching song data...');
         dom.previewBtn.disabled = true;
         dom.addToCartBtn.disabled = true;
-        dom.previewStage.innerHTML = '<div class="skeleton"></div>';
+        dom.previewStageLarge.innerHTML = '<div class="skeleton"></div>';
+        dom.previewStageSmall.innerHTML = '<div class="skeleton"></div>';
 
         try {
             const metaResponse = await fetchAPI('spotify-metadata', { query });
@@ -544,13 +546,15 @@
             const svg = await fetchAPI('preview-plaque', { query, progressTime });
             lastPlaque.svg = svg;
 
-            dom.previewStage.innerHTML = svg;
+            dom.previewStageLarge.innerHTML = svg;
+            dom.previewStageSmall.innerHTML = svg;
             setStatus('Preview ready. Add it to your cart!');
             dom.addToCartBtn.disabled = false;
 
         } catch (err) {
             setStatus(err.message, true);
-            dom.previewStage.innerHTML = '<div class="placeholder">Could not generate preview</div>';
+            dom.previewStageLarge.innerHTML = '<div class="placeholder">Could not generate preview</div>';
+            dom.previewStageSmall.innerHTML = '<div class="placeholder">Could not generate preview</div>';
         } finally {
             dom.previewBtn.disabled = false;
         }
