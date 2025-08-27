@@ -265,9 +265,8 @@
             <div class="container">
                 <h1>Your Vibe, Immortalized.</h1>
                 <p>Design a custom, laser-ready plaque for any song on Spotify. The perfect gift for music lovers, or a timeless piece for your own space.</p>
-                <a href="#designer" class="btn btn-primary">
+                <a href="#designer" class="btn btn-primary" id="startDesigningBtn">
                     Start Designing
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:1.2rem; height:1.2rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.562L16.25 22.5l-.648-1.938a3.375 3.375 0 00-2.672-2.672L11.25 18l1.938-.648a3.375 3.375 0 002.672-2.672L16.25 13l.648 1.938a3.375 3.375 0 002.672 2.672L21.75 18l-1.938.648a3.375 3.375 0 00-2.672 2.672z" /></svg>
                 </a>
             </div>
         </section>
@@ -289,55 +288,75 @@
                         </div>
                         <div class="time-display"><span id="currentTime">0:00</span><span id="totalTime">--:--</span></div>
                     </div>
+                    <div class="field">
+                        <label>Plaque Size</label>
+                        <div class="size-selector">
+                            <label>
+                                <input type="radio" name="plaque-size" value="large" checked>
+                                <span>Large (8.5" x 11")</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="plaque-size" value="small">
+                                <span>Small (4" x 6")</span>
+                            </label>
+                        </div>
+                    </div>
                     <button class="btn btn-primary" id="previewBtn" style="width: 100%;">Design Plaque</button>
                     <div class="status-box" id="statusBox">Enter a song to begin.</div>
                 </div>
                 <div class="panel">
                     <h2 class="panel-title">2. Live Preview</h2>
-                    <div style="display: flex; flex-direction: column; gap: 2rem; align-items: center;">
-                        <div class="preview-size-label" style="font-weight:600; color:var(--slate-700); margin-bottom:0.5rem;">Large Plaque (Sheet Size)</div>
-                        <div class="preview-stage plaque-large" id="previewStageLarge" style="width: 794px; height: 1123px; max-width: 100%; aspect-ratio: 794/1123; box-shadow: var(--shadow-lg);">
-                            <div class="placeholder">Large plaque preview will appear here</div>
-                        </div>
-                        <div class="preview-size-label" style="font-weight:600; color:var(--slate-700); margin:1.5rem 0 0.5rem;">Small Plaque (Phone Size)</div>
-                        <div class="preview-stage plaque-small" id="previewStageSmall" style="width: 360px; height: 720px; max-width: 100%; aspect-ratio: 360/720; box-shadow: var(--shadow-lg);">
-                            <div class="placeholder">Small plaque preview will appear here</div>
-                        </div>
+                    <div class="preview-stage" id="previewStage">
+                        <div class="placeholder">Your design will appear here</div>
                     </div>
                     <button class="btn btn-secondary" id="addToCartBtn" style="width: 100%; margin-top: 1.5rem;" disabled>
                         Add to Cart
                     </button>
                 </div>
             </div>
-        /* Plaque preview sizes */
-        .plaque-large {
-            background: var(--white);
-            border: 2px solid var(--slate-200);
-            border-radius: var(--radius-lg);
+        .size-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .size-selector label {
             display: flex;
             align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--slate-300);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .plaque-small {
-            background: var(--white);
-            border: 2px solid var(--slate-200);
-            border-radius: var(--radius-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .size-selector label:has(input:checked) {
+            background-color: var(--blue-50);
+            border-color: var(--blue-500);
+            color: var(--blue-600);
+            font-weight: 600;
         }
-        .preview-size-label {
-            font-size: 1rem;
-            letter-spacing: 0.02em;
+        .size-selector input {
+            accent-color: var(--blue-500);
+        }
+        .preview-stage.large-plaque {
+            width: 794px;
+            height: 1123px;
+            max-width: 100%;
+            aspect-ratio: 794/1123;
+        }
+        .preview-stage.small-plaque {
+            width: 360px;
+            height: 720px;
+            max-width: 100%;
+            aspect-ratio: 360/720;
         }
         @media (max-width: 900px) {
-            .plaque-large { width: 90vw; height: auto; aspect-ratio: 794/1123; }
-            .plaque-small { width: 60vw; height: auto; aspect-ratio: 360/720; }
+            .preview-stage.large-plaque { width: 90vw; height: auto; }
+            .preview-stage.small-plaque { width: 60vw; height: auto; }
         }
         @media (max-width: 600px) {
-            .plaque-large { width: 100vw; height: auto; aspect-ratio: 794/1123; }
-            .plaque-small { width: 90vw; height: auto; aspect-ratio: 360/720; }
+            .preview-stage.large-plaque { width: 100vw; height: auto; }
+            .preview-stage.small-plaque { width: 90vw; height: auto; }
         }
         </section>
 
@@ -433,8 +452,8 @@
         totalTime: get('totalTime'),
         previewBtn: get('previewBtn'),
         statusBox: get('statusBox'),
-        previewStageLarge: get('previewStageLarge'),
-        previewStageSmall: get('previewStageSmall'),
+        previewStage: get('previewStage'),
+        startDesigningBtn: get('startDesigningBtn'),
         addToCartBtn: get('addToCartBtn'),
         cartBtn: get('cartBtn'),
         cartCount: get('cartCount'),
@@ -517,11 +536,14 @@
             return;
         }
 
+        const selectedSize = document.querySelector('input[name="plaque-size"]:checked').value;
+        dom.previewStage.classList.remove('large-plaque', 'small-plaque');
+        dom.previewStage.classList.add(selectedSize === 'large' ? 'large-plaque' : 'small-plaque');
+
         setStatus('Fetching song data...');
         dom.previewBtn.disabled = true;
         dom.addToCartBtn.disabled = true;
-        dom.previewStageLarge.innerHTML = '<div class="skeleton"></div>';
-        dom.previewStageSmall.innerHTML = '<div class="skeleton"></div>';
+        dom.previewStage.innerHTML = '<div class="skeleton"></div>';
 
         try {
             const metaResponse = await fetchAPI('spotify-metadata', { query });
@@ -546,15 +568,13 @@
             const svg = await fetchAPI('preview-plaque', { query, progressTime });
             lastPlaque.svg = svg;
 
-            dom.previewStageLarge.innerHTML = svg;
-            dom.previewStageSmall.innerHTML = svg;
+            dom.previewStage.innerHTML = svg;
             setStatus('Preview ready. Add it to your cart!');
             dom.addToCartBtn.disabled = false;
 
         } catch (err) {
             setStatus(err.message, true);
-            dom.previewStageLarge.innerHTML = '<div class="placeholder">Could not generate preview</div>';
-            dom.previewStageSmall.innerHTML = '<div class="placeholder">Could not generate preview</div>';
+            dom.previewStage.innerHTML = '<div class="placeholder">Could not generate preview</div>';
         } finally {
             dom.previewBtn.disabled = false;
         }
@@ -680,6 +700,15 @@
 
     // --- Event Listeners ---
     const initEvents = () => {
+        dom.startDesigningBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            dom.songInput.focus();
+            window.scrollTo({
+                top: dom.designer.offsetTop - 80,
+                behavior: 'smooth'
+            });
+        });
+
         // Designer
         dom.previewBtn.addEventListener('click', designPlaque);
         dom.songInput.addEventListener('keydown', (e) => {
