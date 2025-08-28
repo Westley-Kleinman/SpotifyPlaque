@@ -271,16 +271,6 @@ app.post('/api/preview-plaque', async (req, res) => {
 });
 
 /**
- * Handle 404 for unmatched routes
- */
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Endpoint not found',
-    message: `The requested endpoint ${req.method} ${req.originalUrl} does not exist`
-  });
-});
-
-/**
  * POST /api/create-checkout-session
  * Creates a Stripe checkout session for cart items
  */
@@ -352,6 +342,16 @@ app.use((error, req, res, next) => {
     success: false,
     error: 'Internal server error',
     message: 'An unexpected error occurred'
+  });
+});
+
+/**
+ * Handle 404 for unmatched routes
+ */
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Endpoint not found',
+    message: `The requested endpoint ${req.method} ${req.originalUrl} does not exist`
   });
 });
 
