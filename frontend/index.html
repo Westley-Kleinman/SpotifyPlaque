@@ -724,7 +724,14 @@
                     body: JSON.stringify({ items: cart }),
                 });
                 
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', response.status, errorText);
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+                
                 const session = await response.json();
+                console.log('Checkout session created:', session);
                 
                 if (session.error) {
                     throw new Error(session.error);
@@ -739,8 +746,8 @@
                     alert(result.error.message);
                 }
             } catch (error) {
-                console.error('Checkout error:', error);
-                alert('Failed to start checkout. Please try again.');
+                console.error('Checkout error details:', error);
+                alert(`Failed to start checkout: ${error.message}`);
             }
         });
 
