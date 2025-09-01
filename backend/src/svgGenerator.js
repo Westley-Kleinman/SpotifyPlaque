@@ -96,11 +96,57 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   // Reduce knob radius ~15%
   const knobRadius = 8.5; // was 10
   const knobX = Math.max(barX + knobRadius, Math.min(barX + barWidth - knobRadius, barX + fillWidth));
-  // Truncate to avoid collision with right side controls (simple truncation)
-  const MAX_TITLE = 55;
+  // --- Smart title fitting: wrap to two lines if needed; ellipsis as last resort ---
   const MAX_ARTIST = 60;
-  const safeTitle = title.length > MAX_TITLE ? title.substring(0, MAX_TITLE - 1) + '…' : title;
   const safeArtist = artist.length > MAX_ARTIST ? artist.substring(0, MAX_ARTIST - 1) + '…' : artist;
+
+  // Estimate text width (in px) for Arial Black condensed-ish; per-char factors
+  const charFactor = (ch) => {
+    if (/[_\-—–:+]/.test(ch)) return 0.50;
+    if (/[ilI\'`\.,!]/.test(ch)) return 0.35;
+    if (/[mwMW@#&%]/.test(ch)) return 0.85;
+    if (/[A-Z]/.test(ch)) return 0.64;
+    if (/[0-9]/.test(ch)) return 0.58;
+    return 0.58; // lowercase and others
+  };
+  const estimateWidth = (text, fontSize) => {
+    return [...text].reduce((w, ch) => w + charFactor(ch) * fontSize, 0);
+  };
+
+  const MAX_TEXT_WIDTH = barWidth; // use full progress bar width for text block
+  const LINE_GAP = 6; // px between title lines
+
+  function splitToTwoLines(t, fontSize, maxWidth) {
+    const words = t.split(/\s+/);
+    let line1 = '';
+    let line2 = '';
+    for (let i = 0; i < words.length; i++) {
+      const test = line1 ? line1 + ' ' + words[i] : words[i];
+      if (estimateWidth(test, fontSize) <= maxWidth) {
+        line1 = test;
+      } else {
+        line2 = words.slice(i).join(' ');
+        break;
+      }
+    }
+    if (!line2) return { lines: [t], twoLine: false };
+    // Ellipsize second line if needed
+    let l2 = line2;
+    while (l2 && estimateWidth(l2, fontSize) > maxWidth) {
+      const lastSpace = l2.lastIndexOf(' ');
+      l2 = (lastSpace > 0 ? l2.slice(0, lastSpace) : l2.slice(0, -1)).trim();
+    }
+    if (l2 !== line2) l2 = (l2 || '').trim() + '…';
+    if (!l2) {
+      // If everything overflowed, move one word from line1 to line2
+      const l1Words = line1.split(' ');
+      const moved = l1Words.pop();
+      line1 = l1Words.join(' ');
+      l2 = moved + '…';
+    }
+    return { lines: [line1, l2], twoLine: true };
+  }
+  const titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
 
   // Times left-aligned at bar start (combined current / total)
   // Revert to separate left/right times with visual edge alignment.
@@ -113,6 +159,11 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const rightTimeX = barX + barWidth;  // Right timestamp at bar end
   const textLeftX = barX;              // Title and artist aligned with progress bar left edge
   const timesY = barY + barHeight + 25; // Y position for timestamps, below the bar
+
+  // Adjust artist Y if title is two lines
+  const computedArtistY = titleFit.twoLine
+    ? (titleY + TITLE_FONT_SIZE + LINE_GAP + TITLE_FONT_SIZE + artistTopGap)
+    : artistY;
 
   const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}">
@@ -165,9 +216,14 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
         ? `<image x=\"${albumX}\" y=\"${albumY}\" width=\"${albumW}\" height=\"${albumH}\" href=\"${metadata.image}\" preserveAspectRatio=\"xMidYMid slice\" />`
         : `<rect class=\"cls-1\" x=\"${albumX}\" y=\"${albumY}\" width=\"${albumW}\" height=\"${albumH}\"/>`)}
 
-  <!-- Dynamic title & artist -->
-  <text x="${textLeftX}" y="${titleY}" dominant-baseline="hanging" class="dyn-text dyn-title" text-anchor="start">${safeTitle}</text>
-  <text x="${textLeftX}" y="${artistY}" dominant-baseline="hanging" class="dyn-text dyn-artist" text-anchor="start">${safeArtist}</text>
+  <!-- Dynamic title (auto-fits to max width, may split into 2 lines) & artist -->
+  ${titleFit.twoLine
+    ? `<text x="${textLeftX}" y="${titleY}" dominant-baseline="hanging" class="dyn-text dyn-title" text-anchor="start">
+         <tspan x="${textLeftX}" dy="0">${escapeXML(titleFit.lines[0])}</tspan>
+         <tspan x="${textLeftX}" dy="${LINE_GAP + TITLE_FONT_SIZE}">${escapeXML(titleFit.lines[1])}</tspan>
+       </text>`
+    : `<text x="${textLeftX}" y="${titleY}" dominant-baseline="hanging" class="dyn-text dyn-title" text-anchor="start">${escapeXML(titleFit.lines[0])}</text>`}
+  <text x="${textLeftX}" y="${computedArtistY}" dominant-baseline="hanging" class="dyn-text dyn-artist" text-anchor="start">${safeArtist}</text>
 
   <!-- Times (direct edge alignment) -->
   <text x="${leftTimeX}" y="${timesY}" class="dyn-time" text-anchor="start">${currentTime}</text>
