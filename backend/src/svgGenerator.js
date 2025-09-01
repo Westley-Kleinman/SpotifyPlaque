@@ -117,6 +117,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const MAX_TEXT_WIDTH = barWidth; // use full progress bar width for text block
   const LINE_GAP = 6; // px between title lines
   const EXTRA_ARTIST_GAP = 10; // extra separation when title wraps
+  const ARTIST_BAR_MIN_GAP = 28; // minimum gap between artist text bottom and progress bar
 
   function splitToTwoLines(t, fontSize, maxWidth) {
     const words = t.split(/\s+/);
@@ -175,12 +176,17 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const leftTimeX = barX;              // Left timestamp at bar start
   const rightTimeX = barX + barWidth;  // Right timestamp at bar end
   const textLeftX = barX;              // Title and artist aligned with progress bar left edge
-  const timesY = barY + barHeight + 25; // Y position for timestamps, below the bar
+  let timesY = barY + barHeight + 25; // Y position for timestamps, below the bar (may update if bar moves)
 
   // Adjust artist Y if title is two lines
   const computedArtistY = titleFit.twoLine
     ? (titleY + TITLE_FONT_SIZE + LINE_GAP + TITLE_FONT_SIZE + artistTopGap + EXTRA_ARTIST_GAP)
     : (titleY + TITLE_FONT_SIZE + artistTopGap);
+
+  // Ensure a minimum gap between artist text and progress bar by moving the bar down if needed
+  const artistBottom = computedArtistY + ARTIST_FONT_SIZE;
+  const finalBarY = Math.max(barY, artistBottom + ARTIST_BAR_MIN_GAP);
+  timesY = finalBarY + barHeight + 25;
 
   const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}">
@@ -222,9 +228,9 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   </g>
 
   <!-- ORIGINAL BAR (full) remains; add only knob to indicate progress -->
-  <rect class="engrave" x="${barX}" y="${barY}" width="${barWidth}" height="${barHeight}" rx="1" ry="1" />
+  <rect class="engrave" x="${barX}" y="${finalBarY}" width="${barWidth}" height="${barHeight}" rx="1" ry="1" />
   <!-- Solid progress knob engraved -->
-  <circle class="engrave" cx="${knobX}" cy="${barY + barHeight/2}" r="${knobRadius}" />
+  <circle class="engrave" cx="${knobX}" cy="${finalBarY + barHeight/2}" r="${knobRadius}" />
 
   <!-- Album art: if omitAlbum true show only outline rectangle (no embedded raster) -->
   ${omitAlbum
