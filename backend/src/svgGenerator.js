@@ -83,8 +83,9 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   // Move control strip down to create more room for enlarged title/artist
   const barY = albumBottom + 120;    // was +100
   // Artist should sit 5px below the bottom of the title text. Title uses font-size 34px and dominant-baseline="hanging" so titleY is its top.
-  // Enlarge text by ~20%
-  const TITLE_FONT_SIZE = 41; // was 34; keep in sync with .dyn-title font-size in <style>
+  // Enlarge text by ~20% (will auto-shrink if needed)
+  let TITLE_FONT_SIZE = 41; // dynamic; used in CSS and layout
+  const ARTIST_FONT_SIZE = 24;
   const artistTopGap = 5;     // requested gap between title bottom and artist top
   const artistY = titleY + TITLE_FONT_SIZE + artistTopGap; // decoupled from barY now
   const barX = 0;
@@ -146,7 +147,18 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
     }
     return { lines: [line1, l2], twoLine: true };
   }
-  const titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
+  // Fit/shrink loop: ensure title+artist block fits vertically above bar
+  const SAFE_PAD = 10;
+  let titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
+  for (let i = 0; i < 10; i++) {
+    const lines = titleFit.twoLine ? 2 : 1;
+    const needed = (lines * TITLE_FONT_SIZE) + ((lines - 1) * LINE_GAP) + artistTopGap + ARTIST_FONT_SIZE;
+    const available = barY - titleY - SAFE_PAD;
+    if (needed <= available) break;
+    // shrink title font 8% and retry
+    TITLE_FONT_SIZE = Math.max(26, Math.floor(TITLE_FONT_SIZE * 0.92));
+    titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
+  }
 
   // Times left-aligned at bar start (combined current / total)
   // Revert to separate left/right times with visual edge alignment.
@@ -163,7 +175,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   // Adjust artist Y if title is two lines
   const computedArtistY = titleFit.twoLine
     ? (titleY + TITLE_FONT_SIZE + LINE_GAP + TITLE_FONT_SIZE + artistTopGap)
-    : artistY;
+    : (titleY + TITLE_FONT_SIZE + artistTopGap);
 
   const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}">
@@ -179,8 +191,8 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
       .cut-outline { fill:none; stroke:${cutOutlineColor}; stroke-width:0.1mm; }
       /* Text (engrave) */
       .dyn-text { fill:${engraveFill}; stroke:none; font-family: Arial, sans-serif; }
-  .dyn-title { font-size:41px; font-weight:900; font-family:'Arial Black','Helvetica Neue',Arial,sans-serif; letter-spacing:-1px; font-stretch:condensed; }
-  .dyn-artist { font-size:24px; font-weight:600; font-family:Arial,'Helvetica Neue',Arial,sans-serif; letter-spacing:0; }
+  .dyn-title { font-size:${TITLE_FONT_SIZE}px; font-weight:900; font-family:'Arial Black','Helvetica Neue',Arial,sans-serif; letter-spacing:-1px; font-stretch:condensed; }
+  .dyn-artist { font-size:${ARTIST_FONT_SIZE}px; font-weight:600; font-family:Arial,'Helvetica Neue',Arial,sans-serif; letter-spacing:0; }
   .dyn-time { fill:${engraveFill}; font-size:20px; font-weight:500; font-family:Arial,'Helvetica Neue',Arial,sans-serif; text-anchor:start; letter-spacing:0; }
       .dyn-time-end { text-anchor:end; }
     </style>
