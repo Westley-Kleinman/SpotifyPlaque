@@ -116,6 +116,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
 
   const MAX_TEXT_WIDTH = barWidth; // use full progress bar width for text block
   const LINE_GAP = 6; // px between title lines
+  const EXTRA_ARTIST_GAP = 10; // extra separation when title wraps
 
   function splitToTwoLines(t, fontSize, maxWidth) {
     const words = t.split(/\s+/);
@@ -147,9 +148,13 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
     }
     return { lines: [line1, l2], twoLine: true };
   }
-  // Fit/shrink loop: ensure title+artist block fits vertically above bar
+  // Fit/shrink: if title wraps, first apply a one-time 15% reduction, then iterate to fit if needed
   const SAFE_PAD = 10;
   let titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
+  if (titleFit.twoLine) {
+    TITLE_FONT_SIZE = Math.max(26, Math.round(TITLE_FONT_SIZE * 0.85));
+    titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
+  }
   for (let i = 0; i < 10; i++) {
     const lines = titleFit.twoLine ? 2 : 1;
     const needed = (lines * TITLE_FONT_SIZE) + ((lines - 1) * LINE_GAP) + artistTopGap + ARTIST_FONT_SIZE;
@@ -174,7 +179,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
 
   // Adjust artist Y if title is two lines
   const computedArtistY = titleFit.twoLine
-    ? (titleY + TITLE_FONT_SIZE + LINE_GAP + TITLE_FONT_SIZE + artistTopGap)
+    ? (titleY + TITLE_FONT_SIZE + LINE_GAP + TITLE_FONT_SIZE + artistTopGap + EXTRA_ARTIST_GAP)
     : (titleY + TITLE_FONT_SIZE + artistTopGap);
 
   const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
