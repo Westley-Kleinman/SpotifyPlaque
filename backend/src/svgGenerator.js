@@ -198,7 +198,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const blockBottom = artistBottom;
   const heartCenterY = (blockTop + blockBottom) / 2;
   const heartH = ARTIST_FONT_SIZE + 6; // icon height slightly larger than artist font
-  const heartW = heartH;               // square aspect
+  const heartW = heartH * 1.15;        // widen to match Spotify's proportions
   const heartRightX = barX + barWidth; // align right edge to bar end
   const heartX = heartRightX - heartW;
   const heartY = heartCenterY - heartH / 2;
@@ -266,10 +266,23 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
 
   <!-- Spotify-like heart icon (solid), right-aligned to bar; vertically centered with title+artist block -->
   <g class="engrave" transform="translate(${heartX}, ${heartY})">
-    <!-- simple geometric heart: two circles + triangle -->
-    <circle cx="${(0.35).toFixed(2) * heartW}" cy="${(0.35).toFixed(2) * heartH}" r="${(0.22).toFixed(2) * heartH}" />
-    <circle cx="${(0.65).toFixed(2) * heartW}" cy="${(0.35).toFixed(2) * heartH}" r="${(0.22).toFixed(2) * heartH}" />
-    <path d="M ${0.18*heartW} ${0.48*heartH} L ${0.82*heartW} ${0.48*heartH} L ${0.5*heartW} ${0.98*heartH} Z" />
+    <!-- Spotify-like heart path scaled to heartW x heartH -->
+    ${(()=>{
+      const w = heartW, h = heartH;
+      const sx = w/24, sy = h/22; // base path bbox ~24x22
+      // Path approximates Spotify heart: smooth lobes and pointed bottom
+      const d = [
+        `M ${sx*12} ${sy*21}`,
+        `C ${sx*5} ${sy*16} ${sx*2} ${sy*13} ${sx*2} ${sy*9}`,
+        `C ${sx*2} ${sy*6} ${sx*4.5} ${sy*4} ${sx*7} ${sy*4}`,
+        `C ${sx*9} ${sy*4} ${sx*10.5} ${sy*5.5} ${sx*12} ${sy*7}`,
+        `C ${sx*13.5} ${sy*5.5} ${sx*15} ${sy*4} ${sx*17} ${sy*4}`,
+        `C ${sx*19.5} ${sy*4} ${sx*22} ${sy*6} ${sx*22} ${sy*9}`,
+        `C ${sx*22} ${sy*13} ${sx*19} ${sy*16} ${sx*12} ${sy*21}`,
+        'Z'
+      ].join(' ');
+      return `<path d="${d}" />`;
+    })()}
   </g>
 
   <!-- Dynamic title (auto-fits to max width, may split into 2 lines) & artist -->
