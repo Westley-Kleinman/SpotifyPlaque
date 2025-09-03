@@ -14,8 +14,9 @@
     "dotenv": "^17.2.1",
     "express": "^4.18.2",
     "isomorphic-unfetch": "^4.0.2",
-    "spotify-url-info": "^2.2.3",
-    "stripe": "^18.5.0"
+  "spotify-url-info": "^2.2.3",
+  "stripe": "^18.5.0",
+  "sharp": "^0.33.3"
   },
   "devDependencies": {
     "jest": "^29.7.0"

@@ -32,7 +32,7 @@ node -e "console.log(process.env.SPOTIFY_CLIENT_ID ? 'CLIENT_ID set' : 'CLIENT_I
  * @returns {string} - SVG content ready for laser cutting
  */
 function generateSpotifyPlaqueSVG(metadata, options = {}) {
-  const { progressPosition = 0.4, embedImage = false, omitAlbum = false, isPreview = false } = options;
+  const { progressPosition = 0.4, embedImage = false, omitAlbum = false, isPreview = false, plaqueHeightInch } = options;
   const title = escapeXML(metadata.title || 'Unknown Track');
   const artist = escapeXML(metadata.artist || 'Unknown Artist');
   const duration = metadata.duration || '0:00';
@@ -63,6 +63,9 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const originalHeight = 781.99;
   const totalWidth = originalWidth + (borderWidth * 2);
   const totalHeight = originalHeight + (borderWidth * 2);
+  // If a physical plaque height is provided, compute physical width to embed absolute sizing in the SVG
+  const heightInch = plaqueHeightInch || null;
+  const widthInch = heightInch ? (totalWidth / totalHeight) * heightInch : null;
   const cornerRadius = 30; // More rounded edges
 
   // User wants title & artist BELOW album cover on LEFT side.
@@ -189,7 +192,7 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   timesY = finalBarY + barHeight + 25;
 
   const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}">
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}"${heightInch ? ` width="${widthInch.toFixed(3)}in" height="${heightInch.toFixed(3)}in"` : ''}>
   <defs>
     <style>
       /* White (non-engrave) areas / placeholders */
@@ -198,12 +201,14 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
       .light-fill { fill:${lightFill}; stroke:none; }
       /* Engrave: every solid dark element to be raster engraved */
       .engrave { fill:${engraveFill}; stroke:none; }
-      /* Red cutting outline for perimeter */
+  /* Red cutting outline for perimeter */
       .cut-outline { fill:none; stroke:${cutOutlineColor}; stroke-width:0.1mm; }
       /* Text (engrave) */
       .dyn-text { fill:${engraveFill}; stroke:none; font-family: Arial, sans-serif; }
   .dyn-title { font-size:${TITLE_FONT_SIZE}px; font-weight:900; font-family:'Arial Black','Helvetica Neue',Arial,sans-serif; letter-spacing:-1px; font-stretch:condensed; }
   .dyn-artist { font-size:${ARTIST_FONT_SIZE}px; font-weight:600; font-family:Arial,'Helvetica Neue',Arial,sans-serif; letter-spacing:0; }
+  /* Score lines for photo alignment (tiny, hairline) */
+  .score { fill:none; stroke:${engraveFill}; stroke-width:0.1mm; stroke-linecap:round; }
   .dyn-time { fill:${engraveFill}; font-size:20px; font-weight:500; font-family:Arial,'Helvetica Neue',Arial,sans-serif; text-anchor:start; letter-spacing:0; }
       .dyn-time-end { text-anchor:end; }
     </style>
@@ -232,9 +237,17 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   <!-- Solid progress knob engraved -->
   <circle class="engrave" cx="${knobX}" cy="${finalBarY + barHeight/2}" r="${knobRadius}" />
 
-  <!-- Album art: if omitAlbum true show only outline rectangle (no embedded raster) -->
+  <!-- Album art: embed on preview; for production, draw tiny corner score marks for alignment -->
   ${omitAlbum
-    ? `<rect class=\"cls-1\" x=\"${albumX}\" y=\"${albumY}\" width=\"${albumW}\" height=\"${albumH}\"/>`
+    ? (()=>{
+        const corner = (x,y,dx,dy,len)=>`<path class="score" d="M${x} ${y} l${dx*len} 0 M${x} ${y} l0 ${dy*len}"/>`;
+        const len = Math.max(8, Math.min(28, Math.round(albumW * 0.035))); // size-aware corner length
+        const tl = corner(albumX, albumY, 1, 1, len);
+        const tr = corner(albumX+albumW, albumY, -1, 1, len);
+        const bl = corner(albumX, albumY+albumH, 1, -1, len);
+        const br = corner(albumX+albumW, albumY+albumH, -1, -1, len);
+        return tl+tr+bl+br;
+      })()
     : (embedImage && metadata.image
         ? `<image x=\"${albumX}\" y=\"${albumY}\" width=\"${albumW}\" height=\"${albumH}\" href=\"${metadata.image}\" preserveAspectRatio=\"xMidYMid slice\" />`
         : `<rect class=\"cls-1\" x=\"${albumX}\" y=\"${albumY}\" width=\"${albumW}\" height=\"${albumH}\"/>`)}

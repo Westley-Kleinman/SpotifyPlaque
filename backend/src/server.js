@@ -19,6 +19,7 @@ const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STR
 const { fetchSpotifyMetadata, fetchSpotifyMetadataFlexible } = require('./spotifyMetadata');
 const { generateSpotifyPlaqueSVG, generateDetailedPlaqueSVG } = require('./svgGenerator');
 const { products, discounts } = require('./products');
+const sharp = require('sharp');
 
 const app = express();
 // Allow port override by CLI arg: `node src/server.js 3010`
@@ -170,7 +171,7 @@ app.post('/api/spotify-metadata', async (req, res) => {
  */
 app.post('/api/generate-plaque', async (req, res) => {
   try {
-    const { url, query, style = 'minimal', options = {}, progressTime = "0:00" } = req.body;
+  const { url, query, style = 'minimal', options = {}, progressTime = "0:00" } = req.body;
     const input = (url || query || '').trim();
     if (!input) {
       return res.status(400).json({ error:'Missing required field: url or query', message:'Provide a Spotify track URL or a search query' });
@@ -198,15 +199,14 @@ app.post('/api/generate-plaque', async (req, res) => {
     if (style === 'detailed') {
       svgContent = generateDetailedPlaqueSVG(metadata, options);
     } else {
-      // Use new Spotify player-style layout with 8.5x11 inch format
+      // Spotify player-style; allow caller to specify physical height in inches and omit album
       const plaqueOptions = {
-        width: 216,        // 8.5 inches in mm
-        height: 279,       // 11 inches in mm
-        progressPosition: Math.max(0, Math.min(1, progressPosition)), // Clamp between 0-1
+        progressPosition: Math.max(0, Math.min(1, progressPosition)),
         style: 'spotify-player',
-        ...options
+        omitAlbum: true,
+        ...options,
       };
-  svgContent = generateSpotifyPlaqueSVG(metadata, { ...plaqueOptions, omitAlbum: true });
+      svgContent = generateSpotifyPlaqueSVG(metadata, plaqueOptions);
     }
 
     // Log success
@@ -239,6 +239,43 @@ app.post('/api/generate-plaque', async (req, res) => {
       error: error.message,
       code: statusCode
     });
+  }
+});
+
+/**
+ * Prepare album cover image for printing at exact physical width
+ * POST /api/prepare-cover { imageUrl, size } where size: 'large'|'small'
+ * Returns: JPEG with 300 DPI, width sized to album area for the selected plaque height
+ */
+app.post('/api/prepare-cover', async (req, res) => {
+  try {
+    const { imageUrl, size } = req.body || {};
+    if (!imageUrl || !/^https?:\/\//i.test(imageUrl)) {
+      return res.status(400).json({ success:false, error: 'Valid imageUrl required' });
+    }
+    const plaqueHeightInch = size === 'large' ? 12 : 5; // defaults
+    // Geometry from svgGenerator
+    const borderUnits = 36;
+    const originalWidth = 535.19;
+    const originalHeight = 781.99;
+    const totalHeightUnits = originalHeight + borderUnits * 2;
+    const albumWidthUnits = originalWidth; // album area is full content width
+    const albumWidthInch = (albumWidthUnits / totalHeightUnits) * plaqueHeightInch;
+    const DPI = 300;
+    const targetPx = Math.max(300, Math.round(albumWidthInch * DPI));
+
+    // Fetch and process image
+    const resp = await fetch(imageUrl);
+    if (!resp.ok) throw new Error(`Image fetch failed: ${resp.status}`);
+    const buf = Buffer.from(await resp.arrayBuffer());
+    const out = await sharp(buf).resize({ width: targetPx, height: targetPx, fit: 'cover' }).withMetadata({ density: DPI }).jpeg({ quality: 92 }).toBuffer();
+
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Content-Disposition', `attachment; filename="album-cover-${size}-${Date.now()}.jpg"`);
+    res.send(out);
+  } catch (e) {
+    console.error('prepare-cover error:', e.message);
+    res.status(500).json({ success:false, error: e.message });
   }
 });
 
