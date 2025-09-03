@@ -215,6 +215,16 @@
             color: var(--slate-600);
             border: 1px solid var(--slate-200);
         }
+        .status-box.clickable {
+            background-color: var(--blue-50);
+            border-color: var(--slate-300);
+            color: var(--slate-700);
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+        }
+        .status-box.clickable:hover { background-color: #e8f0ff; }
+        .status-box.clickable:active { transform: translateY(1px); }
         .status-box.error {
             background-color: #FEF2F2;
             color: #991B1B;
@@ -243,6 +253,8 @@
             font-size: 1.25rem;
             font-weight: 600;
         }
+    .email-row { display:flex; gap: 0.75rem; justify-content: flex-end; align-items: center; margin-top: 0.75rem; }
+    .email-row input { width: 320px; max-width: 60vw; padding: 0.6rem 0.8rem; border: 1px solid var(--slate-300); border-radius: var(--radius-md); }
         
         .checkout-form { max-width: 600px; margin: 0 auto; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -312,6 +324,11 @@
                 </div>
                 <div id="cart-summary" class="cart-summary" style="display: none;">
                     <p>Subtotal: <span id="subtotal"></span></p>
+                    <div class="email-row">
+                        <label for="customerEmail" style="font-size: 0.9rem; font-weight: 500;">Customer email:</label>
+                        <input id="customerEmail" type="email" placeholder="customer@example.com">
+                    </div>
+                    <div style="text-align: right; color: var(--slate-500); font-size: 0.9rem; margin-top: 0.5rem;">Files will be emailed to the shop inbox. Customer email is optional.</div>
                     <button id="checkoutBtn" class="btn btn-primary" style="margin-top: 1rem;">Proceed to Checkout</button>
                 </div>
             </div>
@@ -363,16 +380,7 @@
             </div>
         </div>
 
-        <div id="admin-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center;">
-        <div class="panel" style="width: 320px;">
-            <h2 class="panel-title">Admin Access</h2>
-            <div class="field">
-                <label for="admin-password">Password</label>
-                <input type="password" id="admin-password">
-            </div>
-            <button id="admin-login-btn" class="btn btn-primary" style="width: 100%;">Login</button>
-        </div>
-    </div>
+        
 
     <script>
     // --- DOM Elements ---
@@ -397,12 +405,9 @@
         emptyCartMsg: get('empty-cart-msg'),
         cartSummary: get('cart-summary'),
         subtotal: get('subtotal'),
-        checkoutBtn: get('checkoutBtn'),
-        checkoutSection: get('checkout-section'),
-        adminTrigger: get('admin-trigger'),
-        adminModal: get('admin-modal'),
-        adminPassword: get('admin-password'),
-    adminLoginBtn: get('admin-login-btn'),
+    checkoutBtn: get('checkoutBtn'),
+    checkoutSection: get('checkout-section'),
+    customerEmail: get('customerEmail'),
     };
 
     // --- State ---
@@ -411,12 +416,10 @@
     let isDragging = false;
     let lastPlaque = { meta: null, svg: null, query: null, progress: 0 };
     let cart = [];
-    let isAdmin = false;
-    const PLAQUE_PRICE = 29.99;
-    const API_BASE = 'https://spotifyplaque.onrender.com/api';
-    
-    // Initialize Stripe
-    const stripe = Stripe('pk_live_51RNeOtJC2sHLBdH8nQ1YgyeBJ7EgzZIYnNvP5ceaIOo5u59YJ0c0uiekDVVPDLTODpKRnuORTviYt7o9W7q8vwOg00p07VBlqy');
+    const PLAQUE_PRICE = 0.00; // Test mode: price $0
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '/api' : 'https://spotifyplaque.onrender.com/api';
+    let BACKEND_CAPS = { freeCheckout: true, stripeEnabled: false };
+    let stripe = null;
 
     // --- Utility Functions ---
     const formatTime = (sec) => {
@@ -425,9 +428,28 @@
         return `${m}:${String(s).padStart(2, '0')}`;
     };
 
-    const setStatus = (msg, isError = false) => {
+    const setStatus = (msg, isError = false, action = null) => {
+        // Reset content and interactivity
         dom.statusBox.textContent = msg;
         dom.statusBox.className = isError ? 'status-box error' : 'status-box';
+        dom.statusBox.removeAttribute('role');
+        dom.statusBox.tabIndex = -1;
+        dom.statusBox.onclick = null;
+        dom.statusBox.onkeydown = null;
+
+        // If an action is provided, make the status box interactive
+        if (!isError && action === 'add-to-cart') {
+            dom.statusBox.classList.add('clickable');
+            dom.statusBox.setAttribute('role', 'button');
+            dom.statusBox.tabIndex = 0;
+            dom.statusBox.onclick = () => addToCart();
+            dom.statusBox.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    addToCart();
+                }
+            };
+        }
     };
 
     const showSection = (section) => {
@@ -451,7 +473,6 @@
         const rect = dom.progressBar.getBoundingClientRect();
         const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
         currentSec = Math.round(frac * trackDurationSec);
-    if (audio) { try { audio.currentTime = currentSec; } catch(_){} }
         updateProgressUI();
     };
 
@@ -504,7 +525,7 @@
             lastPlaque.svg = svg;
 
             dom.previewStage.innerHTML = svg;
-            setStatus('Preview ready. Add it to your cart!');
+            setStatus('Preview ready. Add it to your cart!', false, 'add-to-cart');
             dom.addToCartBtn.disabled = false;
 
         } catch (err) {
@@ -563,7 +584,9 @@
 
     const confirmAddToCart = () => {
         const selectedSize = document.querySelector('input[name="modal-plaque-size"]:checked').value;
-        const price = selectedSize === 'large' ? 39.99 : 29.99;
+        const price = (BACKEND_CAPS.stripeEnabled && !BACKEND_CAPS.freeCheckout)
+            ? (selectedSize === 'large' ? 39.99 : 29.99)
+            : 0.00;
         
         cart.push({ 
             ...lastPlaque, 
@@ -573,7 +596,7 @@
         });
         
         renderCart();
-        setStatus(`${selectedSize.charAt(0).toUpperCase() + selectedSize.slice(1)} '${lastPlaque.meta.title}' added to cart!`, false);
+    setStatus(`${selectedSize.charAt(0).toUpperCase() + selectedSize.slice(1)} '${lastPlaque.meta.title}' added to cart!`, false);
         dom.sizeModal.style.display = 'none';
         dom.cartSection.style.display = 'block';
         window.scrollTo(0, dom.cartSection.offsetTop - 80);
@@ -588,75 +611,42 @@
         renderCart();
     };
 
-    const handleAdminLogin = async () => {
-        if (dom.adminPassword.value === 'secretdownload') {
-            isAdmin = true;
-            dom.adminModal.style.display = 'none';
-            dom.adminPassword.value = '';
-            
-            const item = window.adminDownloadItem;
-            if (!item) {
-                alert('An error occurred. Please try the download again.');
-                return;
-            }
+    // Download flow (zip SVG + 300DPI cover)
+    const downloadItemFiles = async (item) => {
+        const buttonId = `download-btn-${item.id}`;
+        const button = document.getElementById(buttonId);
+        if (button) { button.textContent = 'Generating...'; button.disabled = true; }
+        try {
+            const [svgText, imageBlob] = await Promise.all([
+                fetchAPI('generate-plaque', {
+                    query: item.query,
+                    progressTime: formatTime(item.progress),
+                    options: { plaqueHeightInch: item.size === 'large' ? 12 : 5, omitAlbum: true }
+                }),
+                fetch(`${API_BASE}/prepare-cover`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageUrl: item.meta.image, size: item.size })
+                }).then(async r => { if(!r.ok){ throw new Error(await r.text()); } return r.blob(); })
+            ]);
 
-            const buttonId = `download-btn-${item.id}`;
-            const button = document.getElementById(buttonId);
-            if (button) {
-                button.textContent = 'Generating...';
-                button.disabled = true;
-            }
-
-            try {
-                // Fetch both SVG and Album Cover
-                const [svg, imageBlob] = await Promise.all([
-                    fetchAPI('generate-plaque', {
-                        query: item.query,
-                        progressTime: formatTime(item.progress),
-                        options: { plaqueHeightInch: item.size === 'large' ? 12 : 5, omitAlbum: true }
-                    }).then(res => new Blob([res], { type: 'image/svg+xml' })),
-                    fetch(`${API_BASE}/prepare-cover`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ imageUrl: item.meta.image, size: item.size })
-                    }).then(async r => { if(!r.ok){ throw new Error(await r.text()); } return r.blob(); })
-                ]);
-
-                // Use JSZip to create a zip file
-                const zip = new JSZip();
-                zip.file(`plaque_${item.meta.artist}_${item.meta.title}.svg`, svg);
-                zip.file(`cover_${item.meta.artist}_${item.meta.title}.jpg`, imageBlob);
-
-                const zipBlob = await zip.generateAsync({ type: 'blob' });
-
-                const url = URL.createObjectURL(zipBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `plaqueify_${item.meta.artist}_${item.meta.title}.zip`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-            } catch (err) {
-                alert(`Failed to generate download: ${err.message}`);
-            } finally {
-                if (button) {
-                    button.textContent = 'Download Files';
-                    button.disabled = false;
-                }
-                window.adminDownloadItem = null; // Clear the item
-            }
-
-        } else {
-            alert('Incorrect password.');
+            const zip = new JSZip();
+            zip.file(`plaque_${item.meta.artist}_${item.meta.title}.svg`, new Blob([svgText], { type: 'image/svg+xml' }));
+            zip.file(`cover_${item.meta.artist}_${item.meta.title}.jpg`, imageBlob);
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `plaqueify_${item.meta.artist}_${item.meta.title}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert(`Failed to generate download: ${err.message}`);
+        } finally {
+            if (button) { button.textContent = 'Download Files'; button.disabled = false; }
         }
-    };
-
-    const requestDownload = (item) => {
-        window.adminDownloadItem = item;
-        dom.adminModal.style.display = 'flex';
-        dom.adminPassword.focus();
     };
 
     // Debounced function to automatically generate preview
@@ -753,13 +743,13 @@
             dom.cartSection.style.display = 'block';
             window.scrollTo(0, dom.cartSection.offsetTop - 80);
         });
-        dom.cartItems.addEventListener('click', (e) => {
+    dom.cartItems.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-from-cart-btn')) {
                 removeFromCart(parseInt(e.target.dataset.index, 10));
             }
             if (e.target.classList.contains('download-plaque-btn')) {
                 const item = cart[parseInt(e.target.dataset.index, 10)];
-                requestDownload(item);
+                if (item) downloadItemFiles(item);
             }
         });
 
@@ -769,59 +759,53 @@
                 alert('Your cart is empty!');
                 return;
             }
-            
             try {
-                // Create checkout session
-                const response = await fetch(`${API_BASE}/create-checkout-session`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ items: cart }),
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Server response:', response.status, errorText);
-                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                if (BACKEND_CAPS.stripeEnabled && !BACKEND_CAPS.freeCheckout) {
+                    // Stripe checkout path
+                    const payload = { items: cart.map(it => ({
+                        size: it.size,
+                        progress: it.progress,
+                        meta: it.meta,
+                        query: it.query
+                    })) };
+                    const resp = await fetch(`${API_BASE}/create-checkout-session`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                    });
+                    const data = await resp.json();
+                    if (!resp.ok || !data.id) throw new Error(data.error || 'Failed to start checkout');
+                    await stripe.redirectToCheckout({ sessionId: data.id });
+                    return;
+                } else {
+                    // Email-only test path
+                    const resp = await fetch(`${API_BASE}/test-checkout`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ items: cart, email: (dom.customerEmail && dom.customerEmail.value || '').trim() })
+                    });
+                    const data = await resp.json();
+                    if (!resp.ok || !data.success) throw new Error(data.error || 'Email failed');
+                    cart = []; renderCart(); dom.checkoutSection.style.display = 'block';
+                    window.scrollTo(0, dom.checkoutSection.offsetTop - 80);
                 }
-                
-                const session = await response.json();
-                console.log('Checkout session created:', session);
-                
-                if (session.error) {
-                    throw new Error(session.error);
-                }
-                
-                // Redirect to Stripe checkout
-                const result = await stripe.redirectToCheckout({
-                    sessionId: session.id,
-                });
-                
-                if (result.error) {
-                    alert(result.error.message);
-                }
-            } catch (error) {
-                console.error('Checkout error details:', error);
-                alert(`Failed to start checkout: ${error.message}`);
-            }
+            } catch (e) { alert(`Failed to place order: ${e.message}`); }
         });
 
-        // Admin
-        dom.adminLoginBtn.addEventListener('click', handleAdminLogin);
-        dom.adminPassword.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAdminLogin();
-        });
-        dom.adminModal.addEventListener('click', (e) => {
-            if (e.target === dom.adminModal) {
-                dom.adminModal.style.display = 'none';
-            }
-        });
+    // Admin/download removed in test mode
     };
 
     // --- Initialization ---
-    const init = () => {
+    const init = async () => {
         initEvents();
+        // Fetch backend capabilities
+        try {
+            const res = await fetch((location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '/api/version' : 'https://spotifyplaque.onrender.com/api/version');
+            const caps = await res.json();
+            BACKEND_CAPS = { freeCheckout: !!caps.freeCheckout, stripeEnabled: !!caps.stripeEnabled };
+            if (BACKEND_CAPS.stripeEnabled && !BACKEND_CAPS.freeCheckout) {
+                // Initialize Stripe only when used; key should be embedded or injected server-side in production
+                try { stripe = Stripe('pk_live_51RNeOtJC2sHLBdH8nQ1YgyeBJ7EgzZIYnNvP5ceaIOo5u59YJ0c0uiekDVVPDLTODpKRnuORTviYt7o9W7q8vwOg00p07VBlqy'); } catch {}
+            }
+        } catch {}
         updateProgressUI();
         renderCart();
     };

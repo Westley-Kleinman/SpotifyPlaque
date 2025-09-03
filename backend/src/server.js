@@ -20,10 +20,89 @@ const { fetchSpotifyMetadata, fetchSpotifyMetadataFlexible } = require('./spotif
 const { generateSpotifyPlaqueSVG, generateDetailedPlaqueSVG } = require('./svgGenerator');
 const { products, discounts } = require('./products');
 const sharp = require('sharp');
+const nodemailer = require('nodemailer');
 
 const app = express();
 // Allow port override by CLI arg: `node src/server.js 3010`
 const PORT = process.env.PORT || process.argv[2] || 3001;
+
+// Stripe Webhook must use raw body for signature verification; define this route BEFORE json middleware
+if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const itemsMeta = (() => { try { return JSON.parse(session.metadata?.items || '[]'); } catch { return []; } })();
+        const customerEmail = session.customer_details?.email || null;
+        // Build attachments using the same logic as test-checkout
+        const attachments = [];
+        for (const it of itemsMeta) {
+          const meta = {
+            title: it.title,
+            artist: it.artist,
+            duration: it.duration || '--:--',
+            image: it.image || ''
+          };
+          const progress = it.progress || 0;
+          const size = it.size || 'large';
+          const svg = generateSpotifyPlaqueSVG(meta, {
+            progressPosition: (() => {
+              const [dm, ds] = (meta.duration||'0:00').split(':').map(Number);
+              const dt = (dm||0)*60 + (ds||0); if (!dt) return 0; return Math.min(1, progress/dt);
+            })(),
+            omitAlbum: true,
+            plaqueHeightInch: size === 'large' ? 12 : 5
+          });
+          attachments.push({ filename: `plaque_${meta.artist}_${meta.title}.svg`, content: Buffer.from(svg,'utf8'), contentType: 'image/svg+xml' });
+          try {
+            if (meta.image) {
+              const resp = await fetch(meta.image);
+              if (resp.ok) {
+                const buf = Buffer.from(await resp.arrayBuffer());
+                const plaqueHeightInch = size === 'large' ? 12 : 5;
+                const borderUnits = 36, originalWidth = 535.19, originalHeight = 781.99;
+                const totalHeightUnits = originalHeight + borderUnits * 2;
+                const albumWidthInch = (originalWidth / totalHeightUnits) * plaqueHeightInch;
+                const DPI = 300; const targetPx = Math.max(300, Math.round(albumWidthInch * DPI));
+                const out = await sharp(buf).resize({ width: targetPx, height: targetPx, fit: 'cover' }).withMetadata({ density: DPI }).jpeg({ quality: 92 }).toBuffer();
+                attachments.push({ filename: `cover_${meta.artist}_${meta.title}.jpg`, content: out, contentType: 'image/jpeg' });
+              }
+            }
+          } catch (e) { console.warn('Webhook cover fetch/resize failed:', e.message); }
+        }
+
+        if (!process.env.MAIL_HOST) {
+          console.error('Email not configured; cannot send files on webhook');
+          return res.status(500).send('Email not configured');
+        }
+        const transporter = nodemailer.createTransport({
+          host: process.env.MAIL_HOST,
+          port: parseInt(process.env.MAIL_PORT || '587', 10),
+          secure: !!process.env.MAIL_SECURE,
+          auth: process.env.MAIL_USER ? { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS } : undefined
+        });
+        const RECIPIENT = process.env.ORDER_RECEIVER || 'westkleinman@hotmail.com';
+        const summaryLines = itemsMeta.map((it, idx) => `#${idx+1} ${it.title} — ${it.artist} [${it.size}] @ ${formatTime(it.progress||0)}`);
+        const subject = `Plaqueify files (paid) — ${itemsMeta.length} item${itemsMeta.length>1?'s':''}`;
+        const text = `Stripe Checkout complete.\n\nOrder summary\n${summaryLines.join('\n')}\n\nFiles attached. Receiver: ${RECIPIENT}${customerEmail?`\nCustomer: ${customerEmail}`:''}`;
+        await transporter.sendMail({ from: process.env.MAIL_FROM || 'no-reply@example.com', to: RECIPIENT, cc: customerEmail || undefined, replyTo: customerEmail || undefined, subject, text, attachments });
+      }
+      res.json({ received: true });
+    } catch (e) {
+      console.error('Webhook processing error:', e);
+      res.status(500).send('Webhook handler error');
+    }
+  });
+}
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -70,7 +149,9 @@ app.get('/api/version', (req, res) => {
     version: require('../package.json').version,
     uptimeSeconds: Math.floor(process.uptime()),
     node: process.version,
-    port: PORT
+  port: PORT,
+  freeCheckout: process.env.FREE_CHECKOUT === '1',
+  stripeEnabled: !!stripe
   });
 });
 
@@ -339,8 +420,9 @@ app.post('/api/create-checkout-session', async (req, res) => {
       return res.status(400).json({ error: 'No items provided' });
     }
 
-    // Convert cart items to Stripe line items
-    const line_items = items.map(item => ({
+    // Convert cart items to Stripe line items. For testing, allow $0 pricing via env flag.
+    const freeMode = process.env.FREE_CHECKOUT === '1';
+  const line_items = items.map(item => ({
       price_data: {
         currency: 'usd',
         product_data: {
@@ -348,7 +430,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
           description: `Artist: ${item.meta.artist} | Progress: ${formatTime(item.progress)}`,
           images: [item.meta.image],
         },
-        unit_amount: item.size === 'large' ? 3999 : 2999, // $39.99 for large, $29.99 for small
+    unit_amount: freeMode ? 0 : (item.size === 'large' ? 3999 : 2999),
       },
       quantity: 1,
     }));
@@ -364,7 +446,10 @@ app.post('/api/create-checkout-session', async (req, res) => {
           title: item.meta.title,
           artist: item.meta.artist,
           progress: item.progress,
-          size: item.size
+          size: item.size,
+          image: item.meta.image,
+          duration: item.meta.duration,
+          query: item.query || ''
         })))
       }
     });
@@ -373,6 +458,93 @@ app.post('/api/create-checkout-session', async (req, res) => {
   } catch (error) {
     console.error('Stripe checkout error:', error);
     res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
+/**
+ * POST /api/test-checkout
+ * Accepts { items, email } without charging, generates files, and emails them to the provided address.
+ * Required env for SMTP: MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS, MAIL_FROM
+ */
+app.post('/api/test-checkout', async (req, res) => {
+  try {
+  const { items, email } = req.body || {};
+  if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ success:false, error:'No items provided' });
+  const RECIPIENT = process.env.ORDER_RECEIVER || 'westkleinman@hotmail.com';
+
+    // Generate assets for each item
+    const attachments = [];
+    for (const item of items) {
+      const { query, progress, size, meta } = item;
+      const progressTime = formatTime(progress || 0);
+      // SVG for production (omitAlbum true, physical size by plaqueHeightInch)
+      const svg = generateSpotifyPlaqueSVG(meta, {
+        progressPosition: (()=>{
+          const [dm, ds] = (meta.duration||'0:00').split(':').map(Number);
+          const dt = (dm||0)*60 + (ds||0); if (!dt) return 0;
+          return Math.min(1, (progress||0)/dt);
+        })(),
+        omitAlbum: true,
+        plaqueHeightInch: size === 'large' ? 12 : 5
+      });
+      attachments.push({
+        filename: `plaque_${meta.artist}_${meta.title}.svg`,
+        content: Buffer.from(svg, 'utf8'),
+        contentType: 'image/svg+xml'
+      });
+
+      // Cover image 300 DPI, sized to album area width
+      try {
+        const coverResp = await fetch(meta.image);
+        if (coverResp.ok) {
+          const buf = Buffer.from(await coverResp.arrayBuffer());
+          // Compute target width as in prepare-cover
+          const plaqueHeightInch = size === 'large' ? 12 : 5;
+          const borderUnits = 36;
+          const originalWidth = 535.19;
+          const originalHeight = 781.99;
+          const totalHeightUnits = originalHeight + borderUnits * 2;
+          const albumWidthUnits = originalWidth;
+          const albumWidthInch = (albumWidthUnits / totalHeightUnits) * plaqueHeightInch;
+          const DPI = 300;
+          const targetPx = Math.max(300, Math.round(albumWidthInch * DPI));
+          const out = await sharp(buf).resize({ width: targetPx, height: targetPx, fit: 'cover' }).withMetadata({ density: DPI }).jpeg({ quality: 92 }).toBuffer();
+          attachments.push({ filename: `cover_${meta.artist}_${meta.title}.jpg`, content: out, contentType: 'image/jpeg' });
+        }
+      } catch (e) {
+        console.warn('Cover fetch/resize failed:', e.message);
+      }
+    }
+
+    // Send email
+    if (!process.env.MAIL_HOST) {
+      return res.status(500).json({ success:false, error:'Email not configured. Set MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS, MAIL_FROM' });
+    }
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      port: parseInt(process.env.MAIL_PORT || '587', 10),
+      secure: !!process.env.MAIL_SECURE, // true for 465
+      auth: process.env.MAIL_USER ? { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS } : undefined
+    });
+
+    const summaryLines = items.map((it, idx) => `#${idx+1} ${it.meta.title} — ${it.meta.artist} [${it.size}] @ ${formatTime(it.progress||0)}`);
+    const subject = `Plaqueify files (${items.length} item${items.length>1?'s':''})`;
+    const customerEmail = (typeof email === 'string' && /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email)) ? email.trim() : null;
+    const text = `Order summary\n${summaryLines.join('\n')}\n\nFiles attached for each item:\n- Laser-ready SVG (inches embedded, album corners marked)\n- Cover JPG (300 DPI, sized to album area)\n\nReceiver: ${RECIPIENT}${customerEmail?`\nCustomer: ${customerEmail}`:''}`;
+    const mailOptions = {
+      from: process.env.MAIL_FROM || 'no-reply@example.com',
+      to: RECIPIENT,
+      cc: customerEmail || undefined,
+      replyTo: customerEmail || undefined,
+      subject,
+      text,
+      attachments
+    };
+    const info = await transporter.sendMail(mailOptions);
+
+    res.json({ success:true, message:'Email sent', id: info.messageId });
+  } catch (e) {
+    console.error('test-checkout error:', e);
+    res.status(500).json({ success:false, error:e.message });
   }
 });
 
