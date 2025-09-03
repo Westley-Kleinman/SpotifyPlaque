@@ -162,6 +162,19 @@ app.post('/api/spotify-metadata', async (req, res) => {
   }
 });
 
+// Optional helper: return only preview URL for a query/url
+app.post('/api/track-preview', async (req, res) => {
+  try {
+    const { url, query } = req.body || {};
+    const input = (url || query || '').trim();
+    if (!input) return res.status(400).json({ success:false, error:'Missing required field: url or query' });
+    const { metadata } = await fetchSpotifyMetadataFlexible(input);
+    res.json({ success:true, preview: metadata.preview || null });
+  } catch(e){
+    res.status(500).json({ success:false, error: e.message });
+  }
+});
+
 /**
  * Spotify plaque generator endpoint
  * POST /api/generate-plaque

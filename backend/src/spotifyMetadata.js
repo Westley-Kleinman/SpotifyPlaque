@@ -93,7 +93,8 @@ async function searchTrackViaAPI(query) {
             title: track.name || null,
             artist: (track.artists && track.artists[0] && track.artists[0].name) || null,
             image: (track.album && track.album.images && track.album.images[0] && track.album.images[0].url) || null,
-            duration: track.duration_ms ? formatDuration(track.duration_ms) : null
+            duration: track.duration_ms ? formatDuration(track.duration_ms) : null,
+            preview: track.preview_url || null
           };
           resolve({ resolvedUrl, trackId, metadataFromAPI: metadata });
         } catch(e){

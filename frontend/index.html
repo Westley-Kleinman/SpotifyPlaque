@@ -286,6 +286,11 @@
                             <div class="progress-knob" id="progressKnob"></div>
                         </div>
                         <div class="time-display"><span id="currentTime">0:00</span><span id="totalTime">--:--</span></div>
+                        <div style="display:flex; align-items:center; gap:.75rem; margin-top:.5rem;">
+                            <button id="playBtn" class="btn btn-secondary" style="padding:.5rem .9rem;">Play Preview</button>
+                            <input id="timeInput" type="text" inputmode="numeric" pattern="\\d{1,2}:\\d{2}" placeholder="mm:ss" style="width:90px; padding:.5rem .6rem; border:1px solid var(--slate-300); border-radius: var(--radius-md);">
+                            <button id="applyTimeBtn" class="btn" style="padding:.5rem .9rem; border:1px solid var(--slate-300);">Apply Time</button>
+                        </div>
                     </div>
                     <div class="status-box" id="statusBox">Enter a song to begin.</div>
                 </div>
@@ -401,6 +406,9 @@
         adminModal: get('admin-modal'),
         adminPassword: get('admin-password'),
         adminLoginBtn: get('admin-login-btn'),
+    playBtn: get('playBtn'),
+    timeInput: get('timeInput'),
+    applyTimeBtn: get('applyTimeBtn'),
     };
 
     // --- State ---
@@ -410,6 +418,7 @@
     let lastPlaque = { meta: null, svg: null, query: null, progress: 0 };
     let cart = [];
     let isAdmin = false;
+    let audio = null; // HTMLAudioElement for preview playback
     const PLAQUE_PRICE = 29.99;
     const API_BASE = 'https://spotifyplaque.onrender.com/api';
     
@@ -449,6 +458,7 @@
         const rect = dom.progressBar.getBoundingClientRect();
         const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
         currentSec = Math.round(frac * trackDurationSec);
+    if (audio) { try { audio.currentTime = currentSec; } catch(_){} }
         updateProgressUI();
     };
 
@@ -481,6 +491,20 @@
             const meta = metaResponse.data;
             lastPlaque.meta = meta;
             lastPlaque.query = query;
+            // Setup audio preview if available
+            if (audio) { try { audio.pause(); } catch(_){} audio = null; }
+            if (meta.preview) {
+                audio = new Audio(meta.preview);
+                audio.addEventListener('timeupdate', () => {
+                    if (!isDragging) {
+                        // Keep UI in sync with preview playback but don't exceed known duration
+                        currentSec = Math.floor(audio.currentTime);
+                        if (trackDurationSec && currentSec > trackDurationSec) currentSec = trackDurationSec;
+                        updateProgressUI();
+                    }
+                });
+                audio.addEventListener('ended', () => { if (dom.playBtn) dom.playBtn.textContent = 'Play Preview'; });
+            }
 
             if (meta.duration) {
                 const [m, s] = meta.duration.split(':').map(Number);
@@ -692,6 +716,38 @@
                 isDragging = false;
                 designPlaque(); // Re-design on drop
             }
+        });
+
+        // Play/pause
+        if (dom.playBtn) dom.playBtn.addEventListener('click', async () => {
+            if (!audio) { alert('No preview available for this track.'); return; }
+            try {
+                if (audio.paused) {
+                    if (Math.abs(audio.currentTime - currentSec) > 0.25) audio.currentTime = currentSec;
+                    await audio.play();
+                    dom.playBtn.textContent = 'Pause';
+                } else {
+                    audio.pause();
+                    dom.playBtn.textContent = 'Play Preview';
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Unable to play preview.');
+            }
+        });
+
+        // Manual time input
+        if (dom.applyTimeBtn) dom.applyTimeBtn.addEventListener('click', () => {
+            const val = (dom.timeInput?.value || '').trim();
+            const m = val.match(/^(\d{1,2}):(\d{2})$/);
+            if (!m) { alert('Enter time as mm:ss'); return; }
+            const mm = parseInt(m[1], 10), ss = parseInt(m[2], 10);
+            const sec = mm * 60 + ss;
+            if (isNaN(sec)) return;
+            currentSec = Math.max(0, Math.min(trackDurationSec || sec, sec));
+            if (audio) { try { audio.currentTime = currentSec; } catch(_){} }
+            updateProgressUI();
+            designPlaque();
         });
 
         // Cart
