@@ -188,6 +188,8 @@
         .progress-knob { position: absolute; top: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); background: var(--white); border: 2px solid var(--blue-500); border-radius: 99px; box-shadow: var(--shadow); cursor: grab; }
         .progress-knob:active { cursor: grabbing; }
         .time-display { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; color: var(--slate-500); margin-top: 0.5rem; }
+    .editable-time { padding: 2px 6px; border: 1px solid var(--slate-300); border-radius: 6px; background: var(--slate-50); color: var(--slate-700); cursor: text; }
+    .editable-time:hover { background: var(--slate-100); border-color: var(--slate-400); }
         
         .preview-stage {
             background-color: var(--white);
@@ -285,7 +287,7 @@
                             <div class="progress-fill" id="progressFill"></div>
                             <div class="progress-knob" id="progressKnob"></div>
                         </div>
-                        <div class="time-display"><span id="currentTime" title="Click to edit time">0:00</span><span id="totalTime">--:--</span></div>
+                        <div class="time-display"><span id="currentTime" class="editable-time" title="Click to edit time">0:00</span><span id="totalTime">--:--</span></div>
                     </div>
                     <div class="status-box" id="statusBox">Enter a song to begin.</div>
                 </div>
@@ -716,10 +718,13 @@
                 const m = val.match(/^(\d{1,2}):(\d{2})$/);
                 const span = document.createElement('span');
                 span.id = 'currentTime';
+                span.className = 'editable-time';
                 if (!m) {
                     span.textContent = formatTime(currentSec);
                     parent.replaceChild(span, input);
                     dom.currentTime = span;
+                    // Reattach click handler for further edits
+                    dom.currentTime.addEventListener('click', arguments.callee);
                     return;
                 }
                 const mm = parseInt(m[1], 10), ss = parseInt(m[2], 10);
@@ -728,6 +733,8 @@
                 span.textContent = formatTime(currentSec);
                 parent.replaceChild(span, input);
                 dom.currentTime = span;
+                // Reattach click handler for further edits
+                dom.currentTime.addEventListener('click', arguments.callee);
                 updateProgressUI();
                 designPlaque();
             };
