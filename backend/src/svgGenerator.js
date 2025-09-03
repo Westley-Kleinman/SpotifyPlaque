@@ -118,7 +118,9 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   };
 
   // Reserve space on the right for the Spotify-like heart icon so text doesn't run underneath it
-  const HEART_RESERVE = ARTIST_FONT_SIZE + 12; // px to reserve for heart (icon size + breathing room)
+  const HEART_SCALE = 2; // requested: double size
+  const HEART_WIDTH_EST = (ARTIST_FONT_SIZE + 6) * 1.15 * HEART_SCALE; // approximate heart width
+  const HEART_RESERVE = Math.round(HEART_WIDTH_EST + 8); // breathing room
   const MAX_TEXT_WIDTH = Math.max(180, barWidth - HEART_RESERVE); // limit text width to avoid heart overlap
   const LINE_GAP = 6; // px between title lines
   const EXTRA_ARTIST_GAP = 10; // extra separation when title wraps
@@ -197,8 +199,8 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const blockTop = titleY;
   const blockBottom = artistBottom;
   const heartCenterY = (blockTop + blockBottom) / 2;
-  const heartH = ARTIST_FONT_SIZE + 6; // icon height slightly larger than artist font
-  const heartW = heartH * 1.15;        // widen to match Spotify's proportions
+  const heartH = (ARTIST_FONT_SIZE + 6) * HEART_SCALE; // doubled size
+  const heartW = heartH * 1.15;        // maintain Spotify-like proportions
   const heartRightX = barX + barWidth; // align right edge to bar end
   const heartX = heartRightX - heartW;
   const heartY = heartCenterY - heartH / 2;
