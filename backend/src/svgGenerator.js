@@ -117,7 +117,9 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
     return [...text].reduce((w, ch) => w + charFactor(ch) * fontSize, 0);
   };
 
-  const MAX_TEXT_WIDTH = barWidth; // use full progress bar width for text block
+  // Reserve space on the right for the Spotify-like heart icon so text doesn't run underneath it
+  const HEART_RESERVE = ARTIST_FONT_SIZE + 12; // px to reserve for heart (icon size + breathing room)
+  const MAX_TEXT_WIDTH = Math.max(180, barWidth - HEART_RESERVE); // limit text width to avoid heart overlap
   const LINE_GAP = 6; // px between title lines
   const EXTRA_ARTIST_GAP = 10; // extra separation when title wraps
   const ARTIST_BAR_MIN_GAP = 28; // minimum gap between artist text bottom and progress bar
@@ -191,6 +193,16 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
   const finalBarY = Math.max(barY, artistBottom + ARTIST_BAR_MIN_GAP);
   timesY = finalBarY + barHeight + 25;
 
+  // Heart icon geometry (solid engrave), aligned with bar right edge; centered on the combined title+artist block
+  const blockTop = titleY;
+  const blockBottom = artistBottom;
+  const heartCenterY = (blockTop + blockBottom) / 2;
+  const heartH = ARTIST_FONT_SIZE + 6; // icon height slightly larger than artist font
+  const heartW = heartH;               // square aspect
+  const heartRightX = barX + barWidth; // align right edge to bar end
+  const heartX = heartRightX - heartW;
+  const heartY = heartCenterY - heartH / 2;
+
   const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}"${heightInch ? ` width="${widthInch.toFixed(3)}in" height="${heightInch.toFixed(3)}in"` : ''}>
   <defs>
@@ -251,6 +263,14 @@ function generateSpotifyPlaqueSVG(metadata, options = {}) {
     : (embedImage && metadata.image
         ? `<image x=\"${albumX}\" y=\"${albumY}\" width=\"${albumW}\" height=\"${albumH}\" href=\"${metadata.image}\" preserveAspectRatio=\"xMidYMid slice\" />`
         : `<rect class=\"cls-1\" x=\"${albumX}\" y=\"${albumY}\" width=\"${albumW}\" height=\"${albumH}\"/>`)}
+
+  <!-- Spotify-like heart icon (solid), right-aligned to bar; vertically centered with title+artist block -->
+  <g class="engrave" transform="translate(${heartX}, ${heartY})">
+    <!-- simple geometric heart: two circles + triangle -->
+    <circle cx="${(0.35).toFixed(2) * heartW}" cy="${(0.35).toFixed(2) * heartH}" r="${(0.22).toFixed(2) * heartH}" />
+    <circle cx="${(0.65).toFixed(2) * heartW}" cy="${(0.35).toFixed(2) * heartH}" r="${(0.22).toFixed(2) * heartH}" />
+    <path d="M ${0.18*heartW} ${0.48*heartH} L ${0.82*heartW} ${0.48*heartH} L ${0.5*heartW} ${0.98*heartH} Z" />
+  </g>
 
   <!-- Dynamic title (auto-fits to max width, may split into 2 lines) & artist -->
   ${titleFit.twoLine
