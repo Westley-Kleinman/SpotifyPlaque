@@ -422,6 +422,10 @@
         cartBtn: get('cartBtn'),
     adminSignInBtn: get('adminSignInBtn'),
     adminSignOutBtn: get('adminSignOutBtn'),
+    coverPicker: get('coverPicker'),
+    coverThumb: get('coverThumb'),
+    prevCoverBtn: get('prevCoverBtn'),
+    nextCoverBtn: get('nextCoverBtn'),
         sizeModal: get('size-modal'),
         confirmAddToCartBtn: get('confirm-add-to-cart-btn'),
         cancelAddToCartBtn: get('cancel-add-to-cart-btn'),
@@ -517,7 +521,9 @@
             const error = await response.json().catch(() => ({ error: 'Server error' }));
             throw new Error(error.error || 'Request failed');
         }
-        return endpoint.includes('metadata') ? response.json() : response.text();
+        if (endpoint === 'spotify-metadata' || endpoint === 'cover-options') return response.json();
+        // preview-plaque and generate-plaque return SVG (text)
+        return response.text();
     };
 
     const designPlaque = async () => {
@@ -538,20 +544,20 @@
             lastPlaque.query = query;
             // No audio playback; user will edit time directly
 
-            // Load alternate covers
+            // Load alternate covers (robust fallback to meta.image)
             try {
                 const r = await fetch(`${API_BASE}/cover-options`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
                 const data = await r.json();
-                coverOptions = Array.isArray(data.images) ? data.images : [];
-                if (coverOptions.length === 0 && meta.image) coverOptions = [meta.image];
-                coverIndex = 0;
-                if (coverOptions.length > 0) {
-                    dom.coverThumb.src = coverOptions[coverIndex];
-                    document.getElementById('coverPicker').style.display = 'block';
-                } else {
-                    document.getElementById('coverPicker').style.display = 'none';
-                }
-            } catch { document.getElementById('coverPicker').style.display = meta.image ? 'block' : 'none'; }
+                coverOptions = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
+            } catch { coverOptions = []; }
+            if (!coverOptions.length && meta.image) coverOptions = [meta.image];
+            coverIndex = 0;
+            if (coverOptions.length > 0 && dom.coverThumb) {
+                dom.coverThumb.src = coverOptions[coverIndex];
+                if (dom.coverPicker) dom.coverPicker.style.display = 'block';
+            } else {
+                if (dom.coverPicker) dom.coverPicker.style.display = 'none';
+            }
 
             if (meta.duration) {
                 const [m, s] = meta.duration.split(':').map(Number);
@@ -837,10 +843,10 @@
         // Cart
         dom.addToCartBtn.addEventListener('click', addToCart);
         // Cover cycling
-        document.getElementById('prevCoverBtn').addEventListener('click', async () => {
+        if (dom.prevCoverBtn) dom.prevCoverBtn.addEventListener('click', async () => {
             if (!coverOptions.length) return;
             coverIndex = (coverIndex - 1 + coverOptions.length) % coverOptions.length;
-            dom.coverThumb.src = coverOptions[coverIndex];
+            if (dom.coverThumb) dom.coverThumb.src = coverOptions[coverIndex];
             // Rebuild preview with new cover
             try {
                 const svg = await fetchAPI('preview-plaque', { query: lastPlaque.query, progressTime: formatTime(currentSec), imageOverride: coverOptions[coverIndex] });
@@ -848,16 +854,31 @@
                 dom.previewStage.innerHTML = svg;
             } catch {}
         });
-        document.getElementById('nextCoverBtn').addEventListener('click', async () => {
+        if (dom.nextCoverBtn) dom.nextCoverBtn.addEventListener('click', async () => {
             if (!coverOptions.length) return;
             coverIndex = (coverIndex + 1) % coverOptions.length;
-            dom.coverThumb.src = coverOptions[coverIndex];
+            if (dom.coverThumb) dom.coverThumb.src = coverOptions[coverIndex];
             try {
                 const svg = await fetchAPI('preview-plaque', { query: lastPlaque.query, progressTime: formatTime(currentSec), imageOverride: coverOptions[coverIndex] });
                 lastPlaque.svg = svg;
                 dom.previewStage.innerHTML = svg;
             } catch {}
         });
+
+        // Handle broken cover images by auto-advancing to next available
+        if (dom.coverThumb) {
+            dom.coverThumb.addEventListener('error', () => {
+                if (!coverOptions.length) return;
+                const start = coverIndex;
+                let tried = 0;
+                while (tried < coverOptions.length) {
+                    coverIndex = (coverIndex + 1) % coverOptions.length;
+                    tried++;
+                    const next = coverOptions[coverIndex];
+                    if (next) { dom.coverThumb.src = next; break; }
+                }
+            });
+        }
         dom.confirmAddToCartBtn.addEventListener('click', confirmAddToCart);
         dom.cancelAddToCartBtn.addEventListener('click', cancelAddToCart);
         dom.cartBtn.addEventListener('click', () => {
