@@ -7,6 +7,7 @@
 
 require('dotenv').config();
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 
 // Check if Stripe keys are available
@@ -16,11 +17,12 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
-const { fetchSpotifyMetadata, fetchSpotifyMetadataFlexible } = require('./spotifyMetadata');
+const { fetchSpotifyMetadata, fetchSpotifyMetadataFlexible, searchAlbumCovers } = require('./spotifyMetadata');
 const { generateSpotifyPlaqueSVG, generateDetailedPlaqueSVG } = require('./svgGenerator');
 const { products, discounts } = require('./products');
 const sharp = require('sharp');
 const nodemailer = require('nodemailer');
+const { addOrder, loadOrders, getOrder } = require('./orderStore');
 
 const app = express();
 // Allow port override by CLI arg: `node src/server.js 3010`
@@ -39,7 +41,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
     }
 
     try {
-      if (event.type === 'checkout.session.completed') {
+  if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         const itemsMeta = (() => { try { return JSON.parse(session.metadata?.items || '[]'); } catch { return []; } })();
         const customerEmail = session.customer_details?.email || null;
@@ -92,9 +94,31 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         });
         const RECIPIENT = process.env.ORDER_RECEIVER || 'westkleinman@hotmail.com';
         const summaryLines = itemsMeta.map((it, idx) => `#${idx+1} ${it.title} — ${it.artist} [${it.size}] @ ${formatTime(it.progress||0)}`);
-        const subject = `Plaqueify files (paid) — ${itemsMeta.length} item${itemsMeta.length>1?'s':''}`;
-        const text = `Stripe Checkout complete.\n\nOrder summary\n${summaryLines.join('\n')}\n\nFiles attached. Receiver: ${RECIPIENT}${customerEmail?`\nCustomer: ${customerEmail}`:''}`;
-        await transporter.sendMail({ from: process.env.MAIL_FROM || 'no-reply@example.com', to: RECIPIENT, cc: customerEmail || undefined, replyTo: customerEmail || undefined, subject, text, attachments });
+        const subject = `Plaqueify order (paid) — ${itemsMeta.length} item${itemsMeta.length>1?'s':''}`;
+        const text = FLAGS.sendAttachments
+          ? `Stripe Checkout complete.\n\nOrder summary\n${summaryLines.join('\n')}\n\nFiles attached. Receiver: ${RECIPIENT}${customerEmail?`\nCustomer: ${customerEmail}`:''}`
+          : `Stripe Checkout complete.\n\nOrder summary\n${summaryLines.join('\n')}\n\nNo files attached (summary-only mode). Receiver: ${RECIPIENT}${customerEmail?`\nCustomer: ${customerEmail}`:''}`;
+
+        // Persist order for admin
+        const order = {
+          id: 'ord_' + Date.now().toString(36),
+          created: new Date().toISOString(),
+          items: itemsMeta.map(it => ({
+            title: it.title,
+            artist: it.artist,
+            duration: it.duration,
+            progress: it.progress,
+            size: it.size,
+            image: it.image,
+            query: it.query || ''
+          })),
+          customerEmail: customerEmail,
+          source: 'stripe',
+          emailed: FLAGS.sendAttachments ? 'files' : 'summary'
+        };
+        addOrder(order);
+
+        await transporter.sendMail({ from: process.env.MAIL_FROM || 'no-reply@example.com', to: RECIPIENT, cc: customerEmail || undefined, replyTo: customerEmail || undefined, subject, text, attachments: FLAGS.sendAttachments ? attachments : [] });
       }
       res.json({ received: true });
     } catch (e) {
@@ -105,6 +129,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 }
 
 // Middleware
+app.use(cookieParser(process.env.COOKIE_SECRET || 'dev-cookie-secret'));
 app.use(express.json({ limit: '10mb' }));
 // basic in-memory order store (ephemeral)
 const orders = [];
@@ -143,17 +168,41 @@ app.get('/api/health', (req, res) => {
 });
 
 // Simple version / uptime endpoint for deployment verification
+const FLAGS = {
+  freeCheckout: process.env.FREE_CHECKOUT === '1',
+  stripeEnabled: !!stripe && process.env.FREE_CHECKOUT !== '1',
+  allowPublicDownloads: process.env.ALLOW_PUBLIC_DOWNLOADS === '1',
+  sendAttachments: process.env.SEND_ATTACHMENTS !== '0',
+};
+
+function isAdmin(req){
+  return !!(req.signedCookies && req.signedCookies.admin === '1');
+}
+function requireAdmin(req, res, next){
+  if (isAdmin(req)) return next();
+  return res.status(403).json({ error: 'Admin only' });
+}
+
 app.get('/api/version', (req, res) => {
   res.json({
     name: 'spotify-plaque-backend',
     version: require('../package.json').version,
     uptimeSeconds: Math.floor(process.uptime()),
     node: process.version,
-  port: PORT,
-  freeCheckout: process.env.FREE_CHECKOUT === '1',
-  stripeEnabled: !!stripe
+    port: PORT,
+    ...FLAGS,
+    isAdmin: isAdmin(req)
   });
 });
+
+// Admin login/logout
+app.post('/api/admin/login', (req, res) => {
+  const { key } = req.body || {};
+  if (!key || key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Invalid admin key' });
+  res.cookie('admin', '1', { httpOnly: true, signed: true, sameSite: 'lax', maxAge: 12*60*60*1000 });
+  res.json({ ok: true });
+});
+app.post('/api/admin/logout', (req, res) => { res.clearCookie('admin'); res.json({ ok: true }); });
 
 // --- Ecommerce endpoints ---
 app.get('/api/products', (req, res) => {
@@ -209,7 +258,7 @@ app.post('/api/checkout', (req,res)=>{
   } catch(e){ res.status(400).json({ success:false, error:e.message }); }
 });
 
-app.get('/api/orders', (req,res)=>{ res.json({ count: orders.length, orders }); });
+app.get('/api/orders', requireAdmin, (req,res)=>{ const list = loadOrders(); res.json({ count: list.length, orders: list }); });
 
 /**
  * Spotify metadata endpoint
@@ -246,10 +295,11 @@ app.post('/api/spotify-metadata', async (req, res) => {
 // Optional helper: return only preview URL for a query/url
 app.post('/api/track-preview', async (req, res) => {
   try {
-    const { url, query } = req.body || {};
+  const { url, query, imageOverride } = req.body || {};
     const input = (url || query || '').trim();
     if (!input) return res.status(400).json({ success:false, error:'Missing required field: url or query' });
-    const { metadata } = await fetchSpotifyMetadataFlexible(input);
+  const { metadata } = await fetchSpotifyMetadataFlexible(input);
+  if (imageOverride && /^https?:\/\//i.test(imageOverride)) metadata.image = imageOverride;
     res.json({ success:true, preview: metadata.preview || null });
   } catch(e){
     res.status(500).json({ success:false, error: e.message });
@@ -265,13 +315,14 @@ app.post('/api/track-preview', async (req, res) => {
  */
 app.post('/api/generate-plaque', async (req, res) => {
   try {
-  const { url, query, style = 'minimal', options = {}, progressTime = "0:00" } = req.body;
+  const { url, query, style = 'minimal', options = {}, progressTime = "0:00", imageOverride } = req.body;
     const input = (url || query || '').trim();
     if (!input) {
       return res.status(400).json({ error:'Missing required field: url or query', message:'Provide a Spotify track URL or a search query' });
     }
     console.log(`[${new Date().toISOString()}] Generating plaque input="${input}"`);
     const { metadata, resolvedUrl } = await fetchSpotifyMetadataFlexible(input);
+    if (imageOverride && /^https?:\/\//i.test(imageOverride)) metadata.image = imageOverride;
     
     // Convert progressTime (MM:SS) to position (0-1)
     let progressPosition = 0;
@@ -336,6 +387,20 @@ app.post('/api/generate-plaque', async (req, res) => {
   }
 });
 
+// Return possible album cover options for a query
+app.post('/api/cover-options', async (req, res) => {
+  try {
+    const { url, query } = req.body || {};
+    const input = (url || query || '').trim();
+    if (!input) return res.status(400).json({ success:false, error:'Missing required field: url or query' });
+    const images = await searchAlbumCovers(input);
+    res.json({ success:true, images });
+  } catch (e) {
+    console.error('cover-options error:', e.message);
+    res.status(500).json({ success:false, error: e.message });
+  }
+});
+
 /**
  * Prepare album cover image for printing at exact physical width
  * POST /api/prepare-cover { imageUrl, size } where size: 'large'|'small'
@@ -379,10 +444,11 @@ app.post('/api/prepare-cover', async (req, res) => {
  */
 app.post('/api/preview-plaque', async (req, res) => {
   try {
-  const { url, query, progressTime = '0:00' } = req.body;
+  const { url, query, progressTime = '0:00', imageOverride } = req.body;
   const input = (url || query || '').trim();
   if (!input) return res.status(400).json({ success:false, error:'Missing required field: url or query' });
   const { metadata, resolvedUrl } = await fetchSpotifyMetadataFlexible(input);
+    if (imageOverride && /^https?:\/\//i.test(imageOverride)) metadata.image = imageOverride;
     // Convert progress time to position
     let progressPosition = 0;
     if (progressTime && progressTime !== '0:00') {
@@ -428,7 +494,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
         product_data: {
           name: `${item.size === 'large' ? 'Large' : 'Small'} Spotify Plaque - ${item.meta.title}`,
           description: `Artist: ${item.meta.artist} | Progress: ${formatTime(item.progress)}`,
-          images: [item.meta.image],
+          images: [item.coverUrl || item.meta.image],
         },
     unit_amount: freeMode ? 0 : (item.size === 'large' ? 3999 : 2999),
       },
@@ -447,7 +513,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
           artist: item.meta.artist,
           progress: item.progress,
           size: item.size,
-          image: item.meta.image,
+          image: item.coverUrl || item.meta.image,
           duration: item.meta.duration,
           query: item.query || ''
         })))
@@ -494,7 +560,7 @@ app.post('/api/test-checkout', async (req, res) => {
 
       // Cover image 300 DPI, sized to album area width
       try {
-        const coverResp = await fetch(meta.image);
+        const coverResp = await fetch(item.coverUrl || meta.image);
         if (coverResp.ok) {
           const buf = Buffer.from(await coverResp.arrayBuffer());
           // Compute target width as in prepare-cover
@@ -527,9 +593,11 @@ app.post('/api/test-checkout', async (req, res) => {
     });
 
     const summaryLines = items.map((it, idx) => `#${idx+1} ${it.meta.title} — ${it.meta.artist} [${it.size}] @ ${formatTime(it.progress||0)}`);
-    const subject = `Plaqueify files (${items.length} item${items.length>1?'s':''})`;
+    const subject = `Plaqueify order (${items.length} item${items.length>1?'s':''})`;
     const customerEmail = (typeof email === 'string' && /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email)) ? email.trim() : null;
-    const text = `Order summary\n${summaryLines.join('\n')}\n\nFiles attached for each item:\n- Laser-ready SVG (inches embedded, album corners marked)\n- Cover JPG (300 DPI, sized to album area)\n\nReceiver: ${RECIPIENT}${customerEmail?`\nCustomer: ${customerEmail}`:''}`;
+    const text = FLAGS.sendAttachments
+      ? `Order summary\n${summaryLines.join('\n')}\n\nFiles attached for each item:\n- Laser-ready SVG (inches embedded, album corners marked)\n- Cover JPG (300 DPI, sized to album area)\n\nReceiver: ${RECIPIENT}${customerEmail?`\nCustomer: ${customerEmail}`:''}`
+      : `Order summary\n${summaryLines.join('\n')}\n\nNo files attached (summary-only mode).\nReceiver: ${RECIPIENT}${customerEmail?`\nCustomer: ${customerEmail}`:''}`;
     const mailOptions = {
       from: process.env.MAIL_FROM || 'no-reply@example.com',
       to: RECIPIENT,
@@ -537,11 +605,32 @@ app.post('/api/test-checkout', async (req, res) => {
       replyTo: customerEmail || undefined,
       subject,
       text,
-      attachments
+      attachments: FLAGS.sendAttachments ? attachments : []
     };
-    const info = await transporter.sendMail(mailOptions);
+    // Save order summary regardless of email behavior
+    const order = {
+      id: 'ord_' + Date.now().toString(36),
+      created: new Date().toISOString(),
+      items: items.map(it => ({
+        title: it.meta.title,
+        artist: it.meta.artist,
+        duration: it.meta.duration,
+        progress: it.progress,
+        size: it.size,
+        image: it.meta.image,
+        query: it.query || ''
+      })),
+      customerEmail: (typeof email === 'string' ? email.trim() : null)
+    };
+    addOrder(order);
 
-    res.json({ success:true, message:'Email sent', id: info.messageId });
+    // If emailing is configured, send summary or files depending on flag
+    if (process.env.MAIL_HOST) {
+      const info = await transporter.sendMail(mailOptions);
+      return res.json({ success:true, message: FLAGS.sendAttachments ? 'Email sent (attachments)' : 'Email sent (summary only)', id: info.messageId, orderId: order.id });
+    }
+
+    res.json({ success:true, message: 'Order saved (no email configured)', orderId: order.id });
   } catch (e) {
     console.error('test-checkout error:', e);
     res.status(500).json({ success:false, error:e.message });

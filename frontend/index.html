@@ -272,6 +272,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.344 1.087-.835l1.823-6.841a.75.75 0 00-.543-.922H5.104M15 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.75 19.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg>
                 <div class="cart-count" id="cartCount">0</div>
             </button>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn btn-secondary" id="adminSignInBtn" style="padding:6px 10px; font-size:0.9rem;">Admin Sign In</button>
+                <button class="btn btn-secondary" id="adminSignOutBtn" style="padding:6px 10px; font-size:0.9rem; display:none;">Sign Out</button>
+            </div>
         </div>
     </header>
 
@@ -291,6 +295,14 @@
                     <div class="field">
                         <label for="songInput">Song Search</label>
                         <input id="songInput" type="text" spellcheck="false" autocomplete="off" placeholder="e.g., Bohemian Rhapsody Queen">
+                    </div>
+                    <div class="field" id="coverPicker" style="display:none;">
+                        <label>Album Cover</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button id="prevCoverBtn" class="btn btn-secondary" style="padding:6px 10px;">Prev</button>
+                            <img id="coverThumb" alt="cover" style="width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--slate-200); background: var(--slate-100);" />
+                            <button id="nextCoverBtn" class="btn btn-secondary" style="padding:6px 10px;">Next</button>
+                        </div>
                     </div>
                     <div class="field">
                         <label for="progressKnob">Progress Position</label>
@@ -340,6 +352,18 @@
                     <h2 class="panel-title">Thank You!</h2>
                     <p>Your order has been placed successfully. You will receive a confirmation email shortly.</p>
                     <button onclick="location.reload()" class="btn btn-primary" style="margin-top: 1.5rem;">Continue Shopping</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="admin-section" class="section" style="display: none;">
+            <div class="container">
+                <div class="panel">
+                    <h2 class="panel-title">Admin Orders</h2>
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+                        <button id="refreshOrdersBtn" class="btn btn-secondary">Refresh Orders</button>
+                    </div>
+                    <div id="ordersList" style="display:flex; flex-direction:column; gap:1rem;"></div>
                 </div>
             </div>
         </section>
@@ -396,6 +420,8 @@
         previewStage: get('previewStage'),
         addToCartBtn: get('addToCartBtn'),
         cartBtn: get('cartBtn'),
+    adminSignInBtn: get('adminSignInBtn'),
+    adminSignOutBtn: get('adminSignOutBtn'),
         sizeModal: get('size-modal'),
         confirmAddToCartBtn: get('confirm-add-to-cart-btn'),
         cancelAddToCartBtn: get('cancel-add-to-cart-btn'),
@@ -408,6 +434,9 @@
     checkoutBtn: get('checkoutBtn'),
     checkoutSection: get('checkout-section'),
     customerEmail: get('customerEmail'),
+    adminSection: get('admin-section'),
+    ordersList: get('ordersList'),
+    refreshOrdersBtn: get('refreshOrdersBtn'),
     };
 
     // --- State ---
@@ -415,6 +444,8 @@
     let currentSec = 0;
     let isDragging = false;
     let lastPlaque = { meta: null, svg: null, query: null, progress: 0 };
+    let coverOptions = [];
+    let coverIndex = 0;
     let cart = [];
     const PLAQUE_PRICE = 0.00; // Test mode: price $0
     const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '/api' : 'https://spotifyplaque.onrender.com/api';
@@ -507,6 +538,21 @@
             lastPlaque.query = query;
             // No audio playback; user will edit time directly
 
+            // Load alternate covers
+            try {
+                const r = await fetch(`${API_BASE}/cover-options`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+                const data = await r.json();
+                coverOptions = Array.isArray(data.images) ? data.images : [];
+                if (coverOptions.length === 0 && meta.image) coverOptions = [meta.image];
+                coverIndex = 0;
+                if (coverOptions.length > 0) {
+                    dom.coverThumb.src = coverOptions[coverIndex];
+                    document.getElementById('coverPicker').style.display = 'block';
+                } else {
+                    document.getElementById('coverPicker').style.display = 'none';
+                }
+            } catch { document.getElementById('coverPicker').style.display = meta.image ? 'block' : 'none'; }
+
             if (meta.duration) {
                 const [m, s] = meta.duration.split(':').map(Number);
                 trackDurationSec = m * 60 + s;
@@ -521,7 +567,7 @@
             setStatus('Generating plaque preview...');
             const progressTime = formatTime(currentSec);
             lastPlaque.progress = currentSec;
-            const svg = await fetchAPI('preview-plaque', { query, progressTime });
+            const svg = await fetchAPI('preview-plaque', { query, progressTime, imageOverride: coverOptions[coverIndex] || meta.image });
             lastPlaque.svg = svg;
 
             dom.previewStage.innerHTML = svg;
@@ -562,7 +608,7 @@
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                         <button class="btn btn-secondary remove-from-cart-btn" data-index="${index}">Remove</button>
-                        <button class="btn btn-primary download-plaque-btn" id="download-btn-${item.id}" data-index="${index}">Download Files</button>
+                        <button class="btn btn-primary download-plaque-btn admin-guard" id="download-btn-${item.id}" data-index="${index}">Download Files</button>
                     </div>
                 `;
                 dom.cartItems.appendChild(itemEl);
@@ -571,6 +617,57 @@
 
         const subtotal = cart.reduce((total, item) => total + item.price, 0);
         dom.subtotal.textContent = `$${subtotal.toFixed(2)}`;
+    };
+
+    // --- Admin Orders ---
+    const renderOrders = (orders) => {
+        dom.ordersList.innerHTML = '';
+        if (!orders || orders.length === 0) {
+            const p = document.createElement('p');
+            p.style.color = 'var(--slate-500)';
+            p.textContent = 'No orders yet.';
+            dom.ordersList.appendChild(p);
+            return;
+        }
+        orders.forEach((o, oi) => {
+            const card = document.createElement('div');
+            card.className = 'panel';
+            card.style.padding = '1rem';
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                    <div>
+                        <div style="font-weight:700; color:var(--slate-900)">Order ${o.id}</div>
+                        <div style="font-size:0.9rem; color:var(--slate-500)">${new Date(o.created).toLocaleString()} ${o.customerEmail?`• ${o.customerEmail}`:''}</div>
+                    </div>
+                    <div style="font-size:0.9rem; color:var(--slate-500)">${o.items?.length||0} item(s)</div>
+                </div>
+                <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.5rem;">
+                    ${(o.items||[]).map((it, ii) => `
+                        <div style="display:grid; grid-template-columns: 64px 1fr auto; gap:0.75rem; align-items:center; border:1px solid var(--slate-200); border-radius:8px; padding:0.5rem;">
+                            <img src="${it.image}" alt="${it.title}" style="width:64px; height:64px; object-fit:cover; border-radius:6px; background: var(--slate-100);">
+                            <div>
+                                <div style="font-weight:600; color:var(--slate-900)">${it.title}</div>
+                                <div style="font-size:0.9rem; color:var(--slate-500)">${it.artist} • ${it.size} • ${formatTime(it.progress||0)} ${it.duration?`/ ${it.duration}`:''}</div>
+                            </div>
+                            <button class="btn btn-primary admin-download-btn" data-oi="${oi}" data-ii="${ii}">Download Files</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            dom.ordersList.appendChild(card);
+        });
+    };
+
+    const fetchOrders = async () => {
+        try {
+            const res = await fetch('/api/orders', { credentials: 'include' });
+            if (!res.ok) throw new Error('Failed to load orders');
+            const data = await res.json();
+            window.__ADMIN_ORDERS__ = data.orders || [];
+            renderOrders(window.__ADMIN_ORDERS__);
+        } catch (e) {
+            dom.ordersList.innerHTML = `<div class="status-box error">${e.message}</div>`;
+        }
     };
 
     const addToCart = () => {
@@ -592,7 +689,8 @@
             ...lastPlaque, 
             id: Date.now(),
             size: selectedSize,
-            price: price
+            price: price,
+            coverUrl: (coverOptions && coverOptions[coverIndex]) ? coverOptions[coverIndex] : (lastPlaque.meta && lastPlaque.meta.image)
         });
         
         renderCart();
@@ -621,12 +719,13 @@
                 fetchAPI('generate-plaque', {
                     query: item.query,
                     progressTime: formatTime(item.progress),
-                    options: { plaqueHeightInch: item.size === 'large' ? 12 : 5, omitAlbum: true }
+                    options: { plaqueHeightInch: item.size === 'large' ? 12 : 5, omitAlbum: true },
+                    imageOverride: (coverOptions && coverOptions[coverIndex]) ? coverOptions[coverIndex] : item.meta.image
                 }),
                 fetch(`${API_BASE}/prepare-cover`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imageUrl: item.meta.image, size: item.size })
+                    body: JSON.stringify({ imageUrl: item.coverUrl || ((coverOptions && coverOptions[coverIndex]) ? coverOptions[coverIndex] : item.meta.image), size: item.size })
                 }).then(async r => { if(!r.ok){ throw new Error(await r.text()); } return r.blob(); })
             ]);
 
@@ -737,6 +836,28 @@
 
         // Cart
         dom.addToCartBtn.addEventListener('click', addToCart);
+        // Cover cycling
+        document.getElementById('prevCoverBtn').addEventListener('click', async () => {
+            if (!coverOptions.length) return;
+            coverIndex = (coverIndex - 1 + coverOptions.length) % coverOptions.length;
+            dom.coverThumb.src = coverOptions[coverIndex];
+            // Rebuild preview with new cover
+            try {
+                const svg = await fetchAPI('preview-plaque', { query: lastPlaque.query, progressTime: formatTime(currentSec), imageOverride: coverOptions[coverIndex] });
+                lastPlaque.svg = svg;
+                dom.previewStage.innerHTML = svg;
+            } catch {}
+        });
+        document.getElementById('nextCoverBtn').addEventListener('click', async () => {
+            if (!coverOptions.length) return;
+            coverIndex = (coverIndex + 1) % coverOptions.length;
+            dom.coverThumb.src = coverOptions[coverIndex];
+            try {
+                const svg = await fetchAPI('preview-plaque', { query: lastPlaque.query, progressTime: formatTime(currentSec), imageOverride: coverOptions[coverIndex] });
+                lastPlaque.svg = svg;
+                dom.previewStage.innerHTML = svg;
+            } catch {}
+        });
         dom.confirmAddToCartBtn.addEventListener('click', confirmAddToCart);
         dom.cancelAddToCartBtn.addEventListener('click', cancelAddToCart);
         dom.cartBtn.addEventListener('click', () => {
@@ -753,6 +874,48 @@
             }
         });
 
+        // Admin sign in/out
+        dom.adminSignInBtn.addEventListener('click', async () => {
+            const key = prompt('Enter admin key');
+            if (!key) return;
+            try {
+                const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) });
+                if (!r.ok) throw new Error('Invalid key');
+                await refreshCaps();
+                alert('Admin enabled');
+            } catch (e) { alert(e.message); }
+        });
+        dom.adminSignOutBtn.addEventListener('click', async () => {
+            await fetch('/api/admin/logout', { method: 'POST' });
+            await refreshCaps();
+            alert('Signed out');
+        });
+
+        // Admin orders
+        if (dom.refreshOrdersBtn) {
+            dom.refreshOrdersBtn.addEventListener('click', fetchOrders);
+        }
+        if (dom.ordersList) {
+            dom.ordersList.addEventListener('click', (e) => {
+                const btn = e.target.closest('.admin-download-btn');
+                if (!btn) return;
+                const oi = parseInt(btn.getAttribute('data-oi'), 10);
+                const ii = parseInt(btn.getAttribute('data-ii'), 10);
+                const order = (window.__ADMIN_ORDERS__ || [])[oi];
+                const it = order && order.items ? order.items[ii] : null;
+                if (!it) return;
+                const fake = {
+                    id: `admin-${order.id}-${ii}`,
+                    size: it.size === 'large' ? 'large' : 'small',
+                    progress: it.progress || 0,
+                    query: it.query || `${it.title} ${it.artist}`,
+                    meta: { title: it.title, artist: it.artist, duration: it.duration || '--:--', image: it.image },
+                    coverUrl: it.image
+                };
+                downloadItemFiles(fake);
+            });
+        }
+
         // Checkout
         dom.checkoutBtn.addEventListener('click', async () => {
             if (cart.length === 0) {
@@ -766,7 +929,8 @@
                         size: it.size,
                         progress: it.progress,
                         meta: it.meta,
-                        query: it.query
+                        query: it.query,
+                        coverUrl: it.coverUrl
                     })) };
                     const resp = await fetch(`${API_BASE}/create-checkout-session`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
@@ -794,18 +958,40 @@
     };
 
     // --- Initialization ---
-    const init = async () => {
-        initEvents();
-        // Fetch backend capabilities
+    const refreshCaps = async () => {
         try {
-            const res = await fetch((location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '/api/version' : 'https://spotifyplaque.onrender.com/api/version');
+            const url = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '/api/version' : 'https://spotifyplaque.onrender.com/api/version';
+            const res = await fetch(url, { credentials: 'include' });
             const caps = await res.json();
             BACKEND_CAPS = { freeCheckout: !!caps.freeCheckout, stripeEnabled: !!caps.stripeEnabled };
-            if (BACKEND_CAPS.stripeEnabled && !BACKEND_CAPS.freeCheckout) {
-                // Initialize Stripe only when used; key should be embedded or injected server-side in production
+            const canDownload = !!caps.isAdmin || !!caps.allowPublicDownloads;
+            document.querySelectorAll('.admin-guard').forEach(el => { el.style.display = canDownload ? '' : 'none'; });
+            // Toggle admin buttons
+            if (caps.isAdmin) { dom.adminSignInBtn.style.display = 'none'; dom.adminSignOutBtn.style.display = ''; }
+            else { dom.adminSignInBtn.style.display = ''; dom.adminSignOutBtn.style.display = 'none'; }
+            if (BACKEND_CAPS.stripeEnabled && !BACKEND_CAPS.freeCheckout && !stripe) {
                 try { stripe = Stripe('pk_live_51RNeOtJC2sHLBdH8nQ1YgyeBJ7EgzZIYnNvP5ceaIOo5u59YJ0c0uiekDVVPDLTODpKRnuORTviYt7o9W7q8vwOg00p07VBlqy'); } catch {}
             }
+            // Admin orders visibility
+            if (dom.adminSection) {
+                dom.adminSection.style.display = caps.isAdmin ? 'block' : 'none';
+                if (caps.isAdmin) {
+                    await (async ()=>{
+                        try {
+                            const r = await fetch('/api/orders', { credentials: 'include' });
+                            const data = await r.json();
+                            window.__ADMIN_ORDERS__ = data.orders || [];
+                            renderOrders(window.__ADMIN_ORDERS__);
+                        } catch {}
+                    })();
+                }
+            }
         } catch {}
+    };
+
+    const init = async () => {
+        initEvents();
+        await refreshCaps();
         updateProgressUI();
         renderCart();
     };

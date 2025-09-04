@@ -108,6 +108,55 @@ async function searchTrackViaAPI(query) {
 }
 
 /**
+ * Find alternate album cover URLs for a query by using Spotify Web API.
+ * Returns a deduped array of cover image URLs (highest available resolution).
+ * If API creds are not configured, falls back to the primary image via scraping.
+ */
+async function searchAlbumCovers(query) {
+  if (!query || typeof query !== 'string' || !query.trim()) return [];
+  const token = await getSpotifyAccessToken().catch(()=>null);
+  const out = new Set();
+  const push = (url) => { if (!url) return; const base = url.split('?')[0]; out.add(base); };
+
+  if (token) {
+    // Search both tracks and albums to capture alternate editions/deluxe
+    const makeReq = (path) => new Promise((resolve) => {
+      const req = https.request({
+        method: 'GET',
+        hostname: 'api.spotify.com',
+        path,
+        headers: { 'Authorization': `Bearer ${token}` }
+      }, (res) => {
+        let data=''; res.on('data', d=> data+=d);
+        res.on('end', ()=>{ try { resolve(JSON.parse(data)); } catch { resolve(null); } });
+      });
+      req.on('error', () => resolve(null));
+      req.end();
+    });
+
+    const q = encodeURIComponent(query.trim());
+    const [trackRes, albumRes] = await Promise.all([
+      makeReq(`/v1/search?q=${q}&type=track&limit=10`),
+      makeReq(`/v1/search?q=${q}&type=album&limit=10`)
+    ]);
+
+    const tracks = trackRes?.tracks?.items || [];
+    tracks.forEach(t => { const img = t.album?.images?.[0]?.url; push(img); });
+    const albums = albumRes?.albums?.items || [];
+    albums.forEach(a => { const img = a.images?.[0]?.url; push(img); });
+  }
+
+  if (out.size === 0) {
+    // Fallback: single image via scraping
+    try {
+      const { metadata } = await fetchSpotifyMetadataFlexible(query);
+      push(metadata?.image || null);
+    } catch { /* ignore */ }
+  }
+  return Array.from(out);
+}
+
+/**
  * Validates if a given URL is a valid Spotify track URL
  * @param {string} url - The URL to validate
  * @returns {boolean} - True if valid Spotify track URL, false otherwise
@@ -493,5 +542,6 @@ module.exports = {
   isValidSpotifyTrackUrl,
   formatDuration,
   fetchSpotifyMetadataFlexible,
-  resolveQueryToTrack
+  resolveQueryToTrack,
+  searchAlbumCovers
 };
