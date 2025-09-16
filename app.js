@@ -431,52 +431,245 @@ function generatePreview() {
     elements.svgPreview.style.display = 'block';
 }
 
+
 function generateSpotifyPlaqueSVG(data) {
-    const currentTime = Math.floor(data.duration * data.progress / 100);
-    const totalTime = data.duration;
-    const displayArtist = elements.artistOverride.value.trim() || data.artistName;
-    
-    return `
-    <svg width="300" height="400" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
-        <!-- Background -->
-        <rect width="300" height="400" fill="#FFFFFF" stroke="#000000" stroke-width="2" rx="10"/>
-        
-        <!-- Album Cover -->
-        <image x="25" y="25" width="250" height="250" href="${data.albumCover}" preserveAspectRatio="xMidYMid slice"/>
-        
-        <!-- Song Title -->
-        <text x="150" y="300" text-anchor="middle" fill="#000000" font-family="Arial, sans-serif" font-size="18" font-weight="bold">
-            ${truncateText(data.songName, 20)}
-        </text>
-        
-        <!-- Artist Name -->
-        <text x="150" y="320" text-anchor="middle" fill="#666666" font-family="Arial, sans-serif" font-size="14">
-            ${truncateText(displayArtist, 25)}
-        </text>
-        
-        <!-- Progress Bar Background -->
-        <rect x="25" y="340" width="250" height="4" fill="#CCCCCC" rx="2"/>
-        
-        <!-- Progress Bar Fill -->
-        <rect x="25" y="340" width="${250 * data.progress / 100}" height="4" fill="#1DB954" rx="2"/>
-        
-        <!-- Time Display -->
-        <text x="25" y="360" fill="#666666" font-family="Arial, sans-serif" font-size="10">
-            ${formatTime(currentTime)}
-        </text>
-        <text x="275" y="360" text-anchor="end" fill="#666666" font-family="Arial, sans-serif" font-size="10">
-            ${formatTime(totalTime)}
-        </text>
-        
-        <!-- Spotify Logo -->
-        <circle cx="50" cy="385" r="12" fill="#1DB954"/>
-        <text x="50" y="390" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="12">♫</text>
-        
-        <!-- Spotify URL -->
-        <text x="150" y="385" text-anchor="middle" fill="#1DB954" font-family="Arial, sans-serif" font-size="8">
-            Listen on Spotify
-        </text>
-    </svg>`;
+    // Map frontend data to backend-style metadata
+    const metadata = {
+        title: data.songName,
+        artist: elements.artistOverride && elements.artistOverride.value.trim() ? elements.artistOverride.value.trim() : data.artistName,
+        image: data.albumCover,
+        duration: formatTime(data.duration)
+    };
+    // Use preview mode for client-side SVG
+    const options = {
+        progressPosition: (typeof data.progress === 'number' && data.duration) ? (data.progress / 100) : 0.4,
+        embedImage: true,
+        omitAlbum: false,
+        isPreview: true
+    };
+
+    // --- SVG Plaque Template (from backend/src/svgGenerator.js, commit 7dd97d7...) ---
+    // (This is a direct port, with only variable names adapted for frontend use)
+    // --- Begin SVG Generation ---
+    function escapeXML(text) {
+        if (!text) return '';
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/[\u0080-\uFFFF]/g, function(match) {
+                return '&#' + match.charCodeAt(0) + ';';
+            });
+    }
+
+    const { progressPosition = 0.4, embedImage = false, omitAlbum = false, isPreview = false } = options;
+    const title = escapeXML(metadata.title || 'Unknown Track');
+    const artist = escapeXML(metadata.artist || 'Unknown Artist');
+    const duration = metadata.duration || '0:00';
+
+    // --- Color Palette ---
+    const engraveFill = isPreview ? '#334155' : '#000000';
+    const lightFill = isPreview ? '#FFFFFF' : '#FFFFFF';
+    const plaqueFill = 'transparent';
+    const plaqueStroke = isPreview ? 'transparent' : '#000000';
+    const cutOutlineColor = isPreview ? 'transparent' : '#ff0000';
+
+    // Time calculation based on progress
+    const [m, s] = duration.split(':').map(Number);
+    const total = (m || 0) * 60 + (s || 0);
+    const current = Math.floor(total * progressPosition);
+    const curM = Math.floor(current / 60);
+    const curS = (current % 60).toString().padStart(2, '0');
+    const currentTime = `${curM}:${curS}`;
+
+    // Dimensions
+    const borderWidth = 36;
+    const originalWidth = 535.19;
+    const originalHeight = 781.99;
+    const totalWidth = originalWidth + (borderWidth * 2);
+    const totalHeight = originalHeight + (borderWidth * 2);
+    const cornerRadius = 30;
+
+    // Album cover
+    const albumX = 0;
+    const albumY = 0;
+    const albumW = originalWidth;
+    const albumH = albumW;
+    const albumBottom = albumY + albumH;
+    const titleY = albumBottom + 10;
+    const barY = albumBottom + 120;
+    let TITLE_FONT_SIZE = 41;
+    const ARTIST_FONT_SIZE = 24;
+    const artistTopGap = 5;
+    const barX = 0;
+    const barWidth = originalWidth;
+    const barHeight = 6.8;
+    const rawFill = barWidth * progressPosition;
+    const fillWidth = Math.max(0, Math.min(barWidth, rawFill));
+    const knobRadius = 8.5;
+    const knobX = Math.max(barX + knobRadius, Math.min(barX + barWidth - knobRadius, barX + fillWidth));
+    const MAX_ARTIST = 60;
+    const safeArtist = artist.length > MAX_ARTIST ? artist.substring(0, MAX_ARTIST - 1) + '…' : artist;
+    const charFactor = (ch) => {
+        if (/[_\-—–:+]/.test(ch)) return 0.50;
+        if (/[ilI\'`\.,!]/.test(ch)) return 0.35;
+        if (/[mwMW@#&%]/.test(ch)) return 0.85;
+        if (/[A-Z]/.test(ch)) return 0.64;
+        if (/[0-9]/.test(ch)) return 0.58;
+        return 0.58;
+    };
+    const estimateWidth = (text, fontSize) => {
+        return [...text].reduce((w, ch) => w + charFactor(ch) * fontSize, 0);
+    };
+    const HEART_SCALE = 2;
+    const HEART_WIDTH_EST = (ARTIST_FONT_SIZE + 6) * 1.15 * HEART_SCALE;
+    const HEART_RESERVE = Math.round(HEART_WIDTH_EST + 8);
+    const MAX_TEXT_WIDTH = Math.max(180, barWidth - HEART_RESERVE);
+    const LINE_GAP = 6;
+    const EXTRA_ARTIST_GAP = 10;
+    const ARTIST_BAR_MIN_GAP = 28;
+    function splitToTwoLines(t, fontSize, maxWidth) {
+        const words = t.split(/\s+/);
+        let line1 = '';
+        let line2 = '';
+        for (let i = 0; i < words.length; i++) {
+            const test = line1 ? line1 + ' ' + words[i] : words[i];
+            if (estimateWidth(test, fontSize) <= maxWidth) {
+                line1 = test;
+            } else {
+                line2 = words.slice(i).join(' ');
+                break;
+            }
+        }
+        if (!line2) return { lines: [t], twoLine: false };
+        let l2 = line2;
+        while (l2 && estimateWidth(l2, fontSize) > maxWidth) {
+            const lastSpace = l2.lastIndexOf(' ');
+            l2 = (lastSpace > 0 ? l2.slice(0, lastSpace) : l2.slice(0, -1)).trim();
+        }
+        if (l2 !== line2) l2 = (l2 || '').trim() + '…';
+        if (!l2) {
+            const l1Words = line1.split(' ');
+            const moved = l1Words.pop();
+            line1 = l1Words.join(' ');
+            l2 = moved + '…';
+        }
+        return { lines: [line1, l2], twoLine: true };
+    }
+    const SAFE_PAD = 10;
+    let titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
+    if (titleFit.twoLine) {
+        TITLE_FONT_SIZE = Math.max(26, Math.round(TITLE_FONT_SIZE * 0.85));
+        titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
+    }
+    for (let i = 0; i < 10; i++) {
+        const lines = titleFit.twoLine ? 2 : 1;
+        const needed = (lines * TITLE_FONT_SIZE) + ((lines - 1) * LINE_GAP) + artistTopGap + ARTIST_FONT_SIZE;
+        const available = barY - titleY - SAFE_PAD;
+        if (needed <= available) break;
+        TITLE_FONT_SIZE = Math.max(26, Math.floor(TITLE_FONT_SIZE * 0.92));
+        titleFit = splitToTwoLines(title, TITLE_FONT_SIZE, MAX_TEXT_WIDTH);
+    }
+    const leftTimeX = barX;
+    const rightTimeX = barX + barWidth;
+    const textLeftX = barX;
+    let timesY = barY + barHeight + 25;
+    const computedArtistY = titleFit.twoLine
+        ? (titleY + TITLE_FONT_SIZE + LINE_GAP + TITLE_FONT_SIZE + artistTopGap + EXTRA_ARTIST_GAP)
+        : (titleY + TITLE_FONT_SIZE + artistTopGap);
+    const artistBottom = computedArtistY + ARTIST_FONT_SIZE;
+    const finalBarY = Math.max(barY, artistBottom + ARTIST_BAR_MIN_GAP);
+    timesY = finalBarY + barHeight + 25;
+    const blockTop = titleY;
+    const blockBottom = artistBottom;
+    const heartCenterY = (blockTop + blockBottom) / 2;
+    const heartH = (ARTIST_FONT_SIZE + 6) * HEART_SCALE;
+    const heartW = heartH * 1.15;
+    const heartRightX = barX + barWidth;
+    const heartX = heartRightX - heartW;
+    const heartY = heartCenterY - heartH / 2;
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth} ${totalHeight}">
+  <defs>
+    <style>
+      .cls-1 { fill: ${plaqueFill}; stroke-width: .4px; stroke: ${plaqueStroke}; stroke-miterlimit:10; }
+      .light-fill { fill:${lightFill}; stroke:none; }
+      .engrave { fill:${engraveFill}; stroke:none; }
+      .cut-outline { fill:none; stroke:${cutOutlineColor}; stroke-width:0.1mm; }
+      .dyn-text { fill:${engraveFill}; stroke:none; font-family: Arial, sans-serif; }
+      .dyn-title { font-size:${TITLE_FONT_SIZE}px; font-weight:900; font-family:'Arial Black','Helvetica Neue',Arial,sans-serif; letter-spacing:-1px; font-stretch:condensed; }
+      .dyn-artist { font-size:${ARTIST_FONT_SIZE}px; font-weight:600; font-family:Arial,'Helvetica Neue',Arial,sans-serif; letter-spacing:0; }
+      .score { fill:none; stroke:${engraveFill}; stroke-width:0.1mm; stroke-linecap:round; }
+      .dyn-time { fill:${engraveFill}; font-size:20px; font-weight:500; font-family:Arial,'Helvetica Neue',Arial,sans-serif; text-anchor:start; letter-spacing:0; }
+      .dyn-time-end { text-anchor:end; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="${totalWidth}" height="${totalHeight}" 
+        rx="${cornerRadius}" ry="${cornerRadius}" class="cut-outline"/>
+
+  <g transform="translate(${borderWidth}, ${borderWidth})">
+  <g transform="translate(0, 20)">
+    <g transform="translate(65.6475, 180.3725) scale(0.75)">
+      <circle class="engrave" cx="262.59" cy="721.49" r="60"/>
+      <path class="light-fill" d="M287.71,718.9l-39.46-22.78c-2-1.15-4.5.29-4.5,2.6v45.57c0,2.31,2.5,3.75,4.5,2.6l39.46-22.78c2-1.15,2-4.04,0-5.2Z"/>
+    </g>
+  <path class="engrave" d="M416.92,698.86v19.16l-32.57-18.81c-1.75-1.01-3.95.25-3.95,2.28v39.99c0,2.03,2.19,3.29,3.95,2.28l32.57-18.81v19.16h6v-45.26h-6Z"/>
+  <path class="engrave" d="M108.25,698.86v19.16s32.57-18.81,32.57-18.81c1.75-1.01,3.95.25,3.95,2.28v39.99c0,2.03-2.19,3.29-3.95,2.28l-32.57-18.81v19.16h-6v-45.26h6Z"/>
+  <path class="engrave" d="M34.86,697.63c.56,0,1.04.2,1.45.6l8.13,8.13c.39.39.59.87.59,1.43s-.2,1.05-.59,1.45l-8.13,8.13c-.39.39-.87.59-1.45.59s-1.04-.2-1.44-.6-.6-.88-.6-1.44.2-1.02.59-1.43l4.67-4.67h-3.22c-1.91,0-3.7.42-5.37,1.25s-3.08,1.97-4.21,3.41c-1.75,2.22-2.62,4.74-2.62,7.54s-.68,5.45-2.03,7.88c-.72,1.3-1.59,2.47-2.62,3.51-1.5,1.54-3.26,2.73-5.26,3.59-2,.86-4.12,1.29-6.35,1.29H2.33c-.56,0-1.04-.2-1.44-.6-.4-.4-.6-.88-.6-1.44,0-.56.2-1.04.6-1.44.4-.4.88-.6,1.44-.6h4.07c1.92,0,3.71-.41,5.38-1.24s3.07-1.96,4.2-3.4c1.75-2.22,2.62-4.74,2.62-7.56s.68-5.45,2.03-7.88c.73-1.31,1.6-2.48,2.62-3.49,1.5-1.54,3.26-2.73,5.26-3.6s4.12-1.29,6.35-1.29h3.22l-4.67-4.65c-.39-.41-.59-.89-.59-1.45s.2-1.04.6-1.44c.4-.4.88-.6,1.44-.6h0ZM34.86,726.09c.56,0,1.04.2,1.45.6l8.13,8.13c.39.39.59.87.59,1.45s-.2,1.04-.59,1.43l-8.13,8.13c-.39.39-.87.59-1.45.59s-1.04-.2-1.44-.59c-.4-.39-.6-.87-.6-1.43s.2-1.03.59-1.45l4.67-4.67h-3.22c-2.23,0-4.35-.43-6.35-1.29s-3.75-2.05-5.26-3.59c.82-1.2,1.49-2.47,2.03-3.83,1.13,1.44,2.53,2.57,4.2,3.4,1.67.83,3.46,1.24,5.38,1.24h3.22l-4.67-4.65c-.39-.41-.59-.89-.59-1.45,0-.56.2-1.04.6-1.44s.88-.6,1.44-.6h0ZM2.33,705.76h4.07c2.23,0,4.35.43,6.35,1.29,2,.86,3.75,2.06,5.26,3.6-.83,1.22-1.5,2.49-2.03,3.83-1.13-1.44-2.54-2.58-4.21-3.41-1.67-.83-3.46-1.25-5.37-1.25H2.33c-.56,0-1.04-.2-1.44-.6-.4-.4-.6-.88-.6-1.44,0-.56.2-1.04.6-1.44.4-.4.88-.6,1.44-.6h0Z"/>
+  <path class="engrave" d="M532.33,713.03c-1.4,0-2.55,1.15-2.55,2.55v5.92c0,5.6-4.54,10.16-10.16,10.16h-20.94l1.58-1.58c.46-.46.73-1.1.73-1.79,0-1.4-1.15-2.55-2.55-2.55-.71,0-1.33.28-1.79.76l-5.92,5.92c-.46.46-.73,1.1-.73,1.79s.28,1.33.73,1.79l5.96,5.92c.46.46,1.1.73,1.79.73,1.4,0,2.55-1.15,2.55-2.55,0-.71-.28-1.33-.73-1.79l-1.58-1.58h20.94c8.42,0,15.23-6.81,15.23-15.23v-5.92c-.02-1.4-1.17-2.55-2.57-2.55ZM512.88,711.36h4.01l-1.58,1.58c-.46.46-.76,1.1-.76,1.79,0,1.4,1.15,2.55,2.55,2.55.71,0,1.33-.28,1.79-.76l5.92-5.92c.46-.46.76-1.1.76-1.79s-.28-1.33-.73-1.79l-5.92-5.94c-.46-.46-1.1-.73-1.79-.73-1.4,0-2.55,1.15-2.55,2.55,0,.71.28,1.33.76,1.79l1.58,1.58h-20.94c-8.42,0-15.23,6.81-15.23,15.23v5.92c0,1.4,1.15,2.55,2.55,2.55s2.55-1.15,2.55-2.55v-5.92c0-5.6,4.54-10.16,10.16-10.16l16.88.02h0Z"/>
+  </g>
+
+  <rect class="engrave" x="${barX}" y="${finalBarY}" width="${barWidth}" height="${barHeight}" rx="1" ry="1" />
+  <circle class="engrave" cx="${knobX}" cy="${finalBarY + barHeight/2}" r="${knobRadius}" />
+
+  ${omitAlbum
+        ? (()=>{
+            const corner = (x,y,dx,dy,len)=>`<path class="score" d="M${x} ${y} l${dx*len} 0 M${x} ${y} l0 ${dy*len}"/>`;
+            const len = Math.max(8, Math.min(28, Math.round(albumW * 0.035)));
+            const tl = corner(albumX, albumY, 1, 1, len);
+            const tr = corner(albumX+albumW, albumY, -1, 1, len);
+            const bl = corner(albumX, albumY+albumH, 1, -1, len);
+            const br = corner(albumX+albumW, albumY+albumH, -1, -1, len);
+            return tl+tr+bl+br;
+        })()
+        : (embedImage && metadata.image
+            ? `<image x="${albumX}" y="${albumY}" width="${albumW}" height="${albumH}" href="${metadata.image}" preserveAspectRatio="xMidYMid slice" />`
+            : `<rect class="cls-1" x="${albumX}" y="${albumY}" width="${albumW}" height="${albumH}"/>`)}
+
+  <g class="engrave" transform="translate(${heartX}, ${heartY})">
+    ${(()=>{
+      const w = heartW, h = heartH;
+      const sx = w/24, sy = h/22;
+      const d = [
+        `M ${sx*12} ${sy*21}`,
+        `C ${sx*5} ${sy*16} ${sx*2} ${sy*13} ${sx*2} ${sy*9}`,
+        `C ${sx*2} ${sy*6} ${sx*4.5} ${sy*4} ${sx*7} ${sy*4}`,
+        `C ${sx*9} ${sy*4} ${sx*10.5} ${sy*5.5} ${sx*12} ${sy*7}`,
+        `C ${sx*13.5} ${sy*5.5} ${sx*15} ${sy*4} ${sx*17} ${sy*4}`,
+        `C ${sx*19.5} ${sy*4} ${sx*22} ${sy*6} ${sx*22} ${sy*9}`,
+        `C ${sx*22} ${sy*13} ${sx*19} ${sy*16} ${sx*12} ${sy*21}`,
+        'Z'
+      ].join(' ');
+      return `<path d="${d}" />`;
+    })()}
+  </g>
+
+  ${titleFit.twoLine
+        ? `<text x="${textLeftX}" y="${titleY}" dominant-baseline="hanging" class="dyn-text dyn-title" text-anchor="start">
+             <tspan x="${textLeftX}" dy="0">${escapeXML(titleFit.lines[0])}</tspan>
+             <tspan x="${textLeftX}" dy="${LINE_GAP + TITLE_FONT_SIZE}">${escapeXML(titleFit.lines[1])}</tspan>
+           </text>`
+        : `<text x="${textLeftX}" y="${titleY}" dominant-baseline="hanging" class="dyn-text dyn-title" text-anchor="start">${escapeXML(titleFit.lines[0])}</text>`}
+  <text x="${textLeftX}" y="${computedArtistY}" dominant-baseline="hanging" class="dyn-text dyn-artist" text-anchor="start">${safeArtist}</text>
+
+  <text x="${leftTimeX}" y="${timesY}" class="dyn-time" text-anchor="start">${currentTime}</text>
+  <text x="${rightTimeX}" y="${timesY}" class="dyn-time dyn-time-end">${duration}</text>
+  </g>
+</svg>`;
+    return svgContent;
 }
 
 function truncateText(text, maxLength) {
