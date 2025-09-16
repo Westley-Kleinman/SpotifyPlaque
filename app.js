@@ -4,15 +4,15 @@ const CONFIG = {
     EMAILJS_SERVICE_ID: 'YOUR_SERVICE_ID',
     EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID', 
     EMAILJS_PUBLIC_KEY: 'YOUR_PUBLIC_KEY',
-    SPOTIFY_CLIENT_ID: '7b9c4d3d6f4e4c8a9b2e5f1a8d9c6e3f' // You'll need to replace this with your actual Spotify Client ID
+    SPOTIFY_CLIENT_ID: '362a6b4f86a34a8bb2cba6ec127d4a9b',
+    SPOTIFY_CLIENT_SECRET: '078083103aa74598bf03b0eea14846e7'
 };
 
-// Spotify API configuration
 const SPOTIFY_CONFIG = {
     CLIENT_ID: CONFIG.SPOTIFY_CLIENT_ID,
-    REDIRECT_URI: window.location.origin + window.location.pathname,
-    SCOPES: 'user-read-private user-read-email',
-    API_BASE: 'https://api.spotify.com/v1'
+    CLIENT_SECRET: CONFIG.SPOTIFY_CLIENT_SECRET,
+    API_BASE: 'https://api.spotify.com/v1',
+    TOKEN_URL: 'https://accounts.spotify.com/api/token'
 };
 
 // Global state
@@ -23,6 +23,7 @@ let currentProgress = 30; // Default 30% progress
 let cart = JSON.parse(localStorage.getItem('plaqueify_cart') || '[]');
 let totalDuration = 210; // Default song length in seconds
 let spotifyAccessToken = localStorage.getItem('spotify_access_token') || null;
+let spotifyTokenExpires = localStorage.getItem('spotify_token_expires') || 0;
 
 // DOM elements
 const elements = {
@@ -74,19 +75,38 @@ function initializeApp() {
 // Spotify Authentication
 function initializeSpotifyAuth() {
     // Check if we need to get a new token
-    if (!spotifyAccessToken) {
+    if (!spotifyAccessToken || Date.now() > spotifyTokenExpires) {
         getSpotifyToken();
     }
 }
 
 function getSpotifyToken() {
-    // Use Spotify's Client Credentials flow for public searches
-    // Note: For production, you should implement this on your backend
+    // Use Spotify's Client Credentials flow (insecure for public, but OK for personal use)
     const clientId = SPOTIFY_CONFIG.CLIENT_ID;
-    const clientSecret = 'YOUR_CLIENT_SECRET'; // This should be on your backend!
-    
-    // For now, we'll use a simple approach - in production, move this to backend
-    console.log('Spotify token needed - implementing fallback search');
+    const clientSecret = SPOTIFY_CONFIG.CLIENT_SECRET;
+    const basicAuth = btoa(`${clientId}:${clientSecret}`);
+    fetch(SPOTIFY_CONFIG.TOKEN_URL, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${basicAuth}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'grant_type=client_credentials'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.access_token) {
+            spotifyAccessToken = data.access_token;
+            spotifyTokenExpires = Date.now() + (data.expires_in * 1000) - 60000; // 1 min early
+            localStorage.setItem('spotify_access_token', spotifyAccessToken);
+            localStorage.setItem('spotify_token_expires', spotifyTokenExpires);
+        } else {
+            alert('Failed to get Spotify token.');
+        }
+    })
+    .catch(err => {
+        alert('Spotify token error: ' + err);
+    });
 }
 
 function handleSpotifyCallback() {
