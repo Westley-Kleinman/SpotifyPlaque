@@ -157,6 +157,50 @@ async function searchAlbumCovers(query) {
 }
 
 /**
+ * Strict cover search: only covers from tracks that match the exact title and primary artist.
+ * Requires Spotify Web API credentials. Falls back to [].
+ */
+async function searchAlbumCoversStrict(exact) {
+  try {
+    const token = await getSpotifyAccessToken();
+    if (!token) return [];
+    if (!exact || !exact.title || !exact.artist) return [];
+
+    const normalize = (s) => (s||'')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\([^)]*\)|\[[^\]]*\]/g, '') // remove parenthetical/bracketed content
+      .replace(/-\s*remaster(?:ed)?\s*\d{0,4}/g, '')
+      .replace(/feat\.?[^-]*$/g, '')
+      .trim();
+
+    const q = `track:"${exact.title}" artist:"${exact.artist}"`;
+    const params = `/v1/search?q=${encodeURIComponent(q)}&type=track&limit=20`;
+    const json = await new Promise((resolve) => {
+      const req = https.request({ method:'GET', hostname:'api.spotify.com', path: params, headers:{ Authorization:`Bearer ${token}` } }, (res) => {
+        let data=''; res.on('data', d=> data+=d); res.on('end', ()=>{ try{ resolve(JSON.parse(data)); } catch{ resolve(null); } });
+      });
+      req.on('error', ()=>resolve(null)); req.end();
+    });
+    const wantTitle = normalize(exact.title);
+    const wantArtist = normalize(Array.isArray(exact.artist)? exact.artist[0] : exact.artist);
+    const out = new Set();
+    const push = (url) => { if (!url) return; out.add(url.split('?')[0]); };
+    const items = json?.tracks?.items || [];
+    for (const t of items) {
+      const titleOk = normalize(t.name) === wantTitle;
+      const artistName = t.artists?.[0]?.name || '';
+      const artistOk = normalize(artistName) === wantArtist;
+      if (titleOk && artistOk) {
+        const img = t.album?.images?.[0]?.url;
+        push(img);
+      }
+    }
+    return Array.from(out);
+  } catch { return []; }
+}
+
+/**
  * Validates if a given URL is a valid Spotify track URL
  * @param {string} url - The URL to validate
  * @returns {boolean} - True if valid Spotify track URL, false otherwise
@@ -543,5 +587,6 @@ module.exports = {
   formatDuration,
   fetchSpotifyMetadataFlexible,
   resolveQueryToTrack,
-  searchAlbumCovers
+  searchAlbumCovers,
+  searchAlbumCoversStrict
 };

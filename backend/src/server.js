@@ -17,7 +17,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
-const { fetchSpotifyMetadata, fetchSpotifyMetadataFlexible, searchAlbumCovers } = require('./spotifyMetadata');
+const { fetchSpotifyMetadata, fetchSpotifyMetadataFlexible, searchAlbumCovers, searchAlbumCoversStrict } = require('./spotifyMetadata');
 const { generateSpotifyPlaqueSVG, generateDetailedPlaqueSVG } = require('./svgGenerator');
 const { products, discounts } = require('./products');
 const sharp = require('sharp');
@@ -393,8 +393,14 @@ app.post('/api/cover-options', async (req, res) => {
     const { url, query } = req.body || {};
     const input = (url || query || '').trim();
     if (!input) return res.status(400).json({ success:false, error:'Missing required field: url or query' });
-    const images = await searchAlbumCovers(input);
-    res.json({ success:true, images });
+  const { metadata } = await fetchSpotifyMetadataFlexible(input);
+  // Strict only: exact title + artist
+  let images = await searchAlbumCoversStrict({ title: metadata.title, artist: metadata.artist });
+  // Ensure the scraped image is present as a fallback option (when strict none)
+  const base = (metadata.image||'').split('?')[0];
+  if (!images.length && base) images = [base];
+  else if (base && !images.find(u => u.split('?')[0] === base)) images.unshift(base);
+  res.json({ success:true, images });
   } catch (e) {
     console.error('cover-options error:', e.message);
     res.status(500).json({ success:false, error: e.message });
