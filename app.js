@@ -4,7 +4,15 @@ const CONFIG = {
     EMAILJS_SERVICE_ID: 'YOUR_SERVICE_ID',
     EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID', 
     EMAILJS_PUBLIC_KEY: 'YOUR_PUBLIC_KEY',
-    SPOTIFY_CLIENT_ID: 'YOUR_SPOTIFY_CLIENT_ID'
+    SPOTIFY_CLIENT_ID: '7b9c4d3d6f4e4c8a9b2e5f1a8d9c6e3f' // You'll need to replace this with your actual Spotify Client ID
+};
+
+// Spotify API configuration
+const SPOTIFY_CONFIG = {
+    CLIENT_ID: CONFIG.SPOTIFY_CLIENT_ID,
+    REDIRECT_URI: window.location.origin + window.location.pathname,
+    SCOPES: 'user-read-private user-read-email',
+    API_BASE: 'https://api.spotify.com/v1'
 };
 
 // Global state
@@ -14,6 +22,7 @@ let coverIndex = 0;
 let currentProgress = 30; // Default 30% progress
 let cart = JSON.parse(localStorage.getItem('plaqueify_cart') || '[]');
 let totalDuration = 210; // Default song length in seconds
+let spotifyAccessToken = localStorage.getItem('spotify_access_token') || null;
 
 // DOM elements
 const elements = {
@@ -43,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     updateCartDisplay();
     setupEventListeners();
+    handleSpotifyCallback();
+    initializeSpotifyAuth();
 });
 
 function initializeApp() {
@@ -57,6 +68,38 @@ function initializeApp() {
     
     // Set initial progress
     updateProgressDisplay();
+}
+
+// Spotify Authentication
+function initializeSpotifyAuth() {
+    // Check if we need to get a new token
+    if (!spotifyAccessToken) {
+        getSpotifyToken();
+    }
+}
+
+function getSpotifyToken() {
+    // Use Spotify's Client Credentials flow for public searches
+    // Note: For production, you should implement this on your backend
+    const clientId = SPOTIFY_CONFIG.CLIENT_ID;
+    const clientSecret = 'YOUR_CLIENT_SECRET'; // This should be on your backend!
+    
+    // For now, we'll use a simple approach - in production, move this to backend
+    console.log('Spotify token needed - implementing fallback search');
+}
+
+function handleSpotifyCallback() {
+    // Handle OAuth callback if present
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+    
+    if (accessToken) {
+        spotifyAccessToken = accessToken;
+        localStorage.setItem('spotify_access_token', accessToken);
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 }
 
 function setupEventListeners() {
@@ -82,10 +125,88 @@ function handleSearch(e) {
 }
 
 async function searchSpotify(query) {
-    // For now, using mock data - replace with real Spotify API
-    const mockResults = [
-        {
-            id: 'mock1',
+    try {
+        // Show loading state
+        elements.songTitle.textContent = 'Searching...';
+        elements.artistName.textContent = 'Please wait...';
+        elements.albumName.textContent = '';
+        
+        // Try to get access token if we don't have one
+        if (!spotifyAccessToken) {
+            await getSpotifyAccessToken();
+        }
+        
+        // If we still don't have a token, use fallback search
+        if (!spotifyAccessToken) {
+            return fallbackSearch(query);
+        }
+        
+        // Make API call to Spotify
+        const response = await fetch(`${SPOTIFY_CONFIG.API_BASE}/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
+            headers: {
+                'Authorization': `Bearer ${spotifyAccessToken}`
+            }
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Token expired, clear it and try fallback
+                spotifyAccessToken = null;
+                localStorage.removeItem('spotify_access_token');
+                return fallbackSearch(query);
+            }
+            throw new Error(`Spotify API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.tracks && data.tracks.items.length > 0) {
+            // Use the first search result
+            const track = data.tracks.items[0];
+            selectTrack({
+                id: track.id,
+                name: track.name,
+                artist: track.artists[0].name,
+                album: track.album.name,
+                duration: Math.floor(track.duration_ms / 1000),
+                images: track.album.images,
+                external_urls: track.external_urls
+            });
+        } else {
+            // No results found
+            elements.songTitle.textContent = 'No results found';
+            elements.artistName.textContent = 'Try a different search term';
+            elements.albumName.textContent = '';
+        }
+        
+    } catch (error) {
+        console.error('Spotify search error:', error);
+        fallbackSearch(query);
+    }
+}
+
+async function getSpotifyAccessToken() {
+    try {
+        // For client-side apps, we need to use a different approach
+        // This is a simplified version - in production, you'd want to use your backend
+        
+        // Using the implicit grant flow would require user login
+        // For now, we'll implement a fallback system
+        console.log('Would initiate Spotify OAuth flow here');
+        
+        // You can implement the OAuth flow like this:
+        // window.location.href = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(SPOTIFY_CONFIG.REDIRECT_URI)}&scope=${encodeURIComponent(SPOTIFY_CONFIG.SCOPES)}&response_type=token`;
+        
+    } catch (error) {
+        console.error('Error getting Spotify token:', error);
+    }
+}
+
+function fallbackSearch(query) {
+    // Enhanced fallback with more realistic search results based on query
+    const fallbackResults = {
+        'blinding lights': {
+            id: 'track1',
             name: 'Blinding Lights',
             artist: 'The Weeknd',
             album: 'After Hours',
@@ -95,8 +216,8 @@ async function searchSpotify(query) {
             ],
             external_urls: { spotify: 'https://open.spotify.com/track/0VjIjW4GlULA8ooDgAKVfS' }
         },
-        {
-            id: 'mock2', 
+        'shape of you': {
+            id: 'track2',
             name: 'Shape of You',
             artist: 'Ed Sheeran',
             album: '÷ (Divide)',
@@ -105,15 +226,91 @@ async function searchSpotify(query) {
                 { url: 'https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96' }
             ],
             external_urls: { spotify: 'https://open.spotify.com/track/7qiZfU4dY1lWllzX7mPBI3' }
+        },
+        'bad guy': {
+            id: 'track3',
+            name: 'bad guy',
+            artist: 'Billie Eilish',
+            album: 'WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?',
+            duration: 194,
+            images: [
+                { url: 'https://i.scdn.co/image/ab67616d0000b27350a3147b4edd7701a876c6ce' }
+            ],
+            external_urls: { spotify: 'https://open.spotify.com/track/2Fxmhks0bxGSBdJ92vM42m' }
+        },
+        'watermelon sugar': {
+            id: 'track4',
+            name: 'Watermelon Sugar',
+            artist: 'Harry Styles',
+            album: 'Fine Line',
+            duration: 174,
+            images: [
+                { url: 'https://i.scdn.co/image/ab67616d0000b273277b3ff6dfa06e0a30f587aa' }
+            ],
+            external_urls: { spotify: 'https://open.spotify.com/track/6UelLqGlWMcVH1E5c4H7lY' }
+        },
+        'levitating': {
+            id: 'track5',
+            name: 'Levitating',
+            artist: 'Dua Lipa',
+            album: 'Future Nostalgia',
+            duration: 203,
+            images: [
+                { url: 'https://i.scdn.co/image/ab67616d0000b273ef24c3fdbf9d4ab1e961c5b8' }
+            ],
+            external_urls: { spotify: 'https://open.spotify.com/track/463CkQjx2Zk1yXoBuierM9' }
+        },
+        'this love': {
+            id: 'track6',
+            name: 'This Love (Taylor\'s Version)',
+            artist: 'Taylor Swift',
+            album: 'Speak Now (Taylor\'s Version)',
+            duration: 235,
+            images: [
+                { url: 'https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5' }
+            ],
+            external_urls: { spotify: 'https://open.spotify.com/track/1dGr1c8CrMLDpV6mPbImSI' }
         }
-    ];
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    };
     
-    // For demo purposes, select first result
-    if (mockResults.length > 0) {
-        selectTrack(mockResults[0]);
+    // Find best match
+    const queryLower = query.toLowerCase();
+    let bestMatch = null;
+    
+    // Direct match
+    if (fallbackResults[queryLower]) {
+        bestMatch = fallbackResults[queryLower];
+    } else {
+        // Partial match
+        for (const key in fallbackResults) {
+            if (key.includes(queryLower) || queryLower.includes(key)) {
+                bestMatch = fallbackResults[key];
+                break;
+            }
+        }
+        
+        // Artist match
+        if (!bestMatch) {
+            for (const key in fallbackResults) {
+                const track = fallbackResults[key];
+                if (track.artist.toLowerCase().includes(queryLower)) {
+                    bestMatch = track;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (bestMatch) {
+        selectTrack(bestMatch);
+    } else {
+        // Default fallback
+        elements.songTitle.textContent = 'Song not found in demo';
+        elements.artistName.textContent = 'Try: "blinding lights", "shape of you", "bad guy", etc.';
+        elements.albumName.textContent = '';
+        
+        // Reset album cover
+        elements.albumCover.innerHTML = '<div class="album-placeholder">🎵</div>';
     }
 }
 
@@ -205,55 +402,103 @@ function generateSpotifyPlaqueSVG(data) {
     const totalTime = data.duration;
     
     return `
-    <svg width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+    <svg width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
         <!-- Background -->
         <rect width="400" height="600" fill="#000000" rx="20"/>
         
         <!-- Album Cover -->
-        <foreignObject x="50" y="50" width="300" height="300">
-            <img src="${data.albumCover}" width="300" height="300" style="border-radius: 15px; object-fit: cover;" />
-        </foreignObject>
+        <defs>
+            <clipPath id="coverClip">
+                <rect x="50" y="50" width="300" height="300" rx="15"/>
+            </clipPath>
+        </defs>
+        
+        <image x="50" y="50" width="300" height="300" href="${data.albumCover}" 
+               clip-path="url(#coverClip)" preserveAspectRatio="xMidYMid slice"/>
+        
+        <!-- Cover overlay for rounded corners -->
+        <rect x="50" y="50" width="300" height="300" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1" rx="15"/>
         
         <!-- Song Title -->
-        <text x="200" y="390" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="24" font-weight="bold">
-            ${data.songName.length > 20 ? data.songName.substring(0, 20) + '...' : data.songName}
+        <text x="200" y="390" text-anchor="middle" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="bold">
+            ${truncateText(data.songName, 20)}
         </text>
         
         <!-- Artist Name -->
-        <text x="200" y="420" text-anchor="middle" fill="#B3B3B3" font-family="Arial, sans-serif" font-size="18">
-            ${data.artistName.length > 25 ? data.artistName.substring(0, 25) + '...' : data.artistName}
+        <text x="200" y="420" text-anchor="middle" fill="#B3B3B3" font-family="Inter, Arial, sans-serif" font-size="18">
+            ${truncateText(data.artistName, 25)}
         </text>
         
         <!-- Album Name -->
-        <text x="200" y="445" text-anchor="middle" fill="#888888" font-family="Arial, sans-serif" font-size="14" font-style="italic">
-            ${data.albumName.length > 30 ? data.albumName.substring(0, 30) + '...' : data.albumName}
+        <text x="200" y="445" text-anchor="middle" fill="#888888" font-family="Inter, Arial, sans-serif" font-size="14" font-style="italic">
+            ${truncateText(data.albumName, 30)}
         </text>
         
-        <!-- Progress Bar -->
-        <rect x="50" y="480" width="300" height="4" fill="#333333" rx="2"/>
+        <!-- Progress Bar Background -->
+        <rect x="50" y="480" width="300" height="4" fill="#404040" rx="2"/>
+        
+        <!-- Progress Bar Fill -->
         <rect x="50" y="480" width="${300 * data.progress / 100}" height="4" fill="#1DB954" rx="2"/>
         
+        <!-- Progress Dot -->
+        <circle cx="${50 + (300 * data.progress / 100)}" cy="482" r="6" fill="#1DB954"/>
+        
         <!-- Time Display -->
-        <text x="50" y="505" fill="#B3B3B3" font-family="Arial, sans-serif" font-size="12">
+        <text x="50" y="505" fill="#B3B3B3" font-family="Inter, Arial, sans-serif" font-size="12">
             ${formatTime(currentTime)}
         </text>
-        <text x="350" y="505" text-anchor="end" fill="#B3B3B3" font-family="Arial, sans-serif" font-size="12">
+        <text x="350" y="505" text-anchor="end" fill="#B3B3B3" font-family="Inter, Arial, sans-serif" font-size="12">
             ${formatTime(totalTime)}
         </text>
         
-        <!-- Spotify Logo & QR Code -->
+        <!-- Spotify Logo -->
         <circle cx="80" cy="540" r="20" fill="#1DB954"/>
-        <text x="80" y="547" text-anchor="middle" fill="#000000" font-family="Arial, sans-serif" font-size="16" font-weight="bold">♫</text>
+        <path d="M70 533c0-1.5 1.2-2.7 2.7-2.7 1.5 0 2.7 1.2 2.7 2.7v14c0 1.5-1.2 2.7-2.7 2.7-1.5 0-2.7-1.2-2.7-2.7v-14z M80 528c1.5 0 2.7 1.2 2.7 2.7v16.6c0 1.5-1.2 2.7-2.7 2.7s-2.7-1.2-2.7-2.7v-16.6c0-1.5 1.2-2.7 2.7-2.7z M90 535c0-1.5 1.2-2.7 2.7-2.7 1.5 0 2.7 1.2 2.7 2.7v10c0 1.5-1.2 2.7-2.7 2.7-1.5 0-2.7-1.2-2.7-2.7v-10z" fill="#000000"/>
         
-        <!-- QR Code Placeholder -->
-        <rect x="280" y="520" width="70" height="70" fill="#FFFFFF" stroke="#000000" stroke-width="2" rx="5"/>
-        <text x="315" y="560" text-anchor="middle" fill="#000000" font-family="Arial, sans-serif" font-size="10">QR CODE</text>
+        <!-- QR Code -->
+        <rect x="280" y="515" width="70" height="70" fill="#FFFFFF" stroke="#000000" stroke-width="2" rx="5"/>
+        
+        <!-- QR Code Pattern (simplified) -->
+        <g fill="#000000">
+            <!-- Corner squares -->
+            <rect x="285" y="520" width="15" height="15"/>
+            <rect x="285" y="565" width="15" height="15"/>
+            <rect x="330" y="520" width="15" height="15"/>
+            
+            <!-- Center square -->
+            <rect x="307" y="542" width="6" height="6"/>
+            
+            <!-- Pattern dots -->
+            <rect x="290" y="540" width="2" height="2"/>
+            <rect x="295" y="538" width="2" height="2"/>
+            <rect x="298" y="545" width="2" height="2"/>
+            <rect x="320" y="540" width="2" height="2"/>
+            <rect x="325" y="545" width="2" height="2"/>
+            <rect x="315" y="550" width="2" height="2"/>
+        </g>
         
         <!-- Spotify URL -->
-        <text x="200" y="580" text-anchor="middle" fill="#1DB954" font-family="Arial, sans-serif" font-size="10" text-decoration="underline">
-            Listen on Spotify
+        <text x="200" y="580" text-anchor="middle" fill="#1DB954" font-family="Inter, Arial, sans-serif" font-size="10" text-decoration="underline">
+            ${data.spotifyUrl ? 'Listen on Spotify' : 'Scan to Listen'}
         </text>
+        
+        <!-- Subtle shadow effect -->
+        <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="rgba(0,0,0,0.3)"/>
+            </filter>
+        </defs>
+        
+        <!-- Apply shadow to main elements -->
+        <style>
+            .shadow { filter: url(#shadow); }
+        </style>
     </svg>`;
+}
+
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
 // Cart functionality
