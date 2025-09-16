@@ -335,9 +335,6 @@ function selectTrack(track) {
     currentTrack = track;
     totalDuration = track.duration;
 
-    // Reset progress to 0 for new track
-    currentProgress = 0;
-
     // Update display
     elements.songTitle.textContent = track.name;
     elements.artistName.textContent = track.artist;
@@ -345,7 +342,19 @@ function selectTrack(track) {
     elements.totalTime.textContent = formatTime(track.duration);
 
     // Show SVG preview in the album cover area with a realistic outline
-    updateSvgPreviewTime();
+    elements.albumCover.innerHTML = `
+        <div class="svg-outline-wrapper">
+            ${generateSpotifyPlaqueSVG({
+                songName: track.name,
+                artistName: track.artist,
+                albumName: track.album,
+                albumCover: track.images[0].url,
+                spotifyUrl: track.external_urls.spotify,
+                progress: currentProgress,
+                duration: totalDuration
+            })}
+        </div>
+    `;
     elements.svgPreview.style.display = 'none';
 
     // Enable buttons
@@ -410,12 +419,9 @@ function updateProgressDisplay() {
     const percentage = currentProgress;
     elements.progressFill.style.width = `${percentage}%`;
     elements.progressHandle.style.left = `${percentage}%`;
+    
     const currentSeconds = Math.floor(totalDuration * percentage / 100);
     elements.currentTime.textContent = formatTime(currentSeconds);
-    // Always update SVG preview time to match progress
-    if (currentTrack) {
-        updateSvgPreviewTime();
-    }
 }
 
 // SVG Generation
