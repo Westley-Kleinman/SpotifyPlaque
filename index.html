@@ -8,125 +8,94 @@
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <h1>Plaqueify</h1>
-        <div class="slogan">Create beautiful custom Spotify plaques of your favorite songs</div>
-        <div class="sub-slogan">The original Spotify plaque creator – trusted by music lovers since 2020</div>
-    </div>
+        <!-- Header -->
+        <div class="header">
+                <h1>Plaqueify</h1>
+                <div class="slogan">Create beautiful custom Spotify plaques of your favorite songs</div>
+                <div class="sub-slogan">The original Spotify plaque creator – trusted by music lovers since 2020</div>
+        </div>
 
-    <!-- Main Container -->
-    <div class="container">
-        <div class="main-grid">
-            <!-- Left Panel - Song Creator -->
-            <div class="creator-panel">
-                <h2 class="section-title">🎵 Create Your Plaque</h2>
-                
-                <!-- Search Section -->
-                <div class="search-container">
-                    <label class="input-label">Search for a song</label>
-                    <input 
-                        type="text" 
-                        class="search-input" 
-                        id="songSearch"
-                        placeholder="Enter song name..."
-                        autocomplete="off"
-                    >
-                    
-                    <label class="input-label">Override Artist (Optional)</label>
-                    <input 
-                        type="text" 
-                        class="artist-input" 
-                        id="artistOverride"
-                        placeholder="Leave blank to use original artist..."
-                        autocomplete="off"
-                    >
-                </div>
-
-                <!-- Album Preview -->
-                <div class="preview-container">
-                    <div class="album-showcase">
-                        <div class="album-cover-container">
-                            <div class="album-cover" id="albumCover">
-                                <div class="album-placeholder">🎵</div>
+        <!-- Main Container -->
+        <div class="container">
+            <div class="main-grid">
+                <!-- Left Panel - Song Creator -->
+                <div class="creator-panel">
+                    <h2 class="section-title">🎵 Create Your Plaque</h2>
+                    <!-- Search Section -->
+                    <div class="search-container">
+                        <label class="input-label">Search for a song</label>
+                        <input type="text" class="search-input" id="songSearch" placeholder="Enter song name..." autocomplete="off">
+                        <label class="input-label">Override Artist (Optional)</label>
+                        <input type="text" class="artist-input" id="artistOverride" placeholder="Leave blank to use original..." autocomplete="off">
+                    </div>
+                    <!-- Album Preview -->
+                    <div class="preview-container">
+                        <div class="album-showcase">
+                            <div class="album-cover-container">
+                                <div class="album-cover" id="albumCover">
+                                    <div class="album-placeholder">🎵</div>
+                                </div>
+                            </div>
+                            <div class="song-details">
+                                <div class="song-title" id="songTitle">Select a song to get started</div>
+                                <div class="artist-name" id="artistName">Search above to find your favorite tracks</div>
+                                <div class="album-name" id="albumName"></div>
                             </div>
                         </div>
-
-                        <div class="song-details">
-                            <div class="song-title" id="songTitle">Select a song to get started</div>
-                            <div class="artist-name" id="artistName">Search above to find your favorite tracks</div>
-                            <div class="album-name" id="albumName"></div>
-                        </div>
-                    </div>
-
-                    <!-- Progress Controls -->
-                    <div class="progress-section">
-                        <div class="progress-title">Choose Progress Position</div>
-                        <div class="progress-bar-wrapper">
-                            <div class="progress-track" id="progressTrack">
-                                <div class="progress-fill" id="progressFill"></div>
-                                <div class="progress-handle" id="progressHandle"></div>
+                        <!-- Progress Controls -->
+                        <div class="progress-section">
+                            <div class="progress-title">Choose Progress Position</div>
+                            <div class="progress-bar-wrapper">
+                                <div class="progress-track" id="progressTrack">
+                                    <div class="progress-fill" id="progressFill"></div>
+                                    <div class="progress-handle" id="progressHandle"></div>
+                                </div>
+                            </div>
+                            <div class="time-labels">
+                                <span id="currentTime">0:00</span>
+                                <span id="totalTime">0:00</span>
                             </div>
                         </div>
-                        <div class="time-labels">
-                            <span id="currentTime">0:00</span>
-                            <span id="totalTime">0:00</span>
+                    </div>
+                    <!-- Action Buttons -->
+                    <div class="action-row">
+                        <button class="btn btn-secondary" id="previewBtn">👁️ Preview</button>
+                        <button class="btn btn-primary" id="addToCartBtn">🛒 Add to Cart - $24.99</button>
+                    </div>
+                    <!-- SVG Preview -->
+                    <div class="svg-preview" id="svgPreview" style="display: none;"></div>
+                </div>
+                <!-- Right Panel - Cart -->
+                <div class="cart-panel">
+                    <div class="cart-header">
+                        <h2 class="cart-title">Cart</h2>
+                        <div class="cart-badge" id="cartBadge">0</div>
+                    </div>
+                    <div class="cart-items" id="cartItems">
+                        <div class="empty-cart">
+                            <div class="icon">🛒</div>
+                            <p>Your cart is empty</p>
+                            <p style="font-size: 0.9rem; margin-top: 0.5rem;">Add some plaques to get started!</p>
                         </div>
                     </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="action-row">
-                    <button class="btn btn-secondary" id="previewBtn">
-                        👁️ Preview
-                    </button>
-                    <button class="btn btn-primary" id="addToCartBtn">
-                        🛒 Add to Cart - $24.99
-                    </button>
-                </div>
-
-                <!-- SVG Preview -->
-                <div class="svg-preview" id="svgPreview" style="display: none;">
-                    <!-- Generated SVG will appear here -->
-                </div>
-            </div>
-
-            <!-- Right Panel - Cart -->
-            <div class="cart-panel">
-                <div class="cart-header">
-                    <h2 class="cart-title">Cart</h2>
-                    <div class="cart-badge" id="cartBadge">0</div>
-                </div>
-
-                <div class="cart-items" id="cartItems">
-                    <div class="empty-cart">
-                        <div class="icon">🛒</div>
-                        <p>Your cart is empty</p>
-                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Add some plaques to get started!</p>
+                    <div class="cart-summary" id="cartSummary" style="display: none;">
+                        <div class="summary-line">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">$0.00</span>
+                        </div>
+                        <div class="summary-line">
+                            <span>Shipping:</span>
+                            <span>$4.99</span>
+                        </div>
+                        <div class="summary-total">
+                            <span>Total:</span>
+                            <span id="total">$0.00</span>
+                        </div>
+                        <button class="checkout-btn" id="checkoutBtn">🚀 Checkout</button>
                     </div>
-                </div>
-
-                <div class="cart-summary" id="cartSummary" style="display: none;">
-                    <div class="summary-line">
-                        <span>Subtotal:</span>
-                        <span id="subtotal">$0.00</span>
-                    </div>
-                    <div class="summary-line">
-                        <span>Shipping:</span>
-                        <span>$4.99</span>
-                    </div>
-                    <div class="summary-total">
-                        <span>Total:</span>
-                        <span id="total">$0.00</span>
-                    </div>
-                    
-                    <button class="checkout-btn" id="checkoutBtn">
-                        🚀 Checkout
-                    </button>
                 </div>
             </div>
         </div>
-    </div>
 
     <script src="app.js"></script>
 </body>
