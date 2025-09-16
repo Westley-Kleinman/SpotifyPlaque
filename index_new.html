@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaqueify - Custom Spotify Plaques</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --spotify-green: #1db954;
+            --spotify-green-dark: #1aa34a;
+            --spotify-black: #191414;
+            --spotify-dark: #121212;
+            --spotify-grey: #535353;
+            --spotify-light-grey: #b3b3b3;
+            --spotify-white: #ffffff;
+            --gradient: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: var(--spotify-white);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, rgba(29, 185, 84, 0.1) 0%, rgba(18, 18, 18, 0.8) 100%);
+        }
+
+        .header h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            color: var(--spotify-light-grey);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        /* Left Panel */
+        .creator-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--spotify-white);
+        }
+
+        /* Search Section */
+        .search-container {
+            position: relative;
+            margin-bottom: 3rem;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--spotify-black);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 1.25rem 1.75rem;
+            color: var(--spotify-white);
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--spotify-green);
+            box-shadow: 0 0 0 4px rgba(29, 185, 84, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: var(--spotify-grey);
+        }
+
+        /* Album Preview */
+        .preview-container {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .album-showcase {
+            background: var(--spotify-black);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .album-cover-container {
+            margin-bottom: 2rem;
+        }
+
+        .album-cover {
+            width: 240px;
+            height: 240px;
+            margin: 0 auto;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--spotify-grey), var(--spotify-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s ease;
+            position: relative;
+        }
+
+        .album-cover:hover {
+            transform: scale(1.05);
+        }
+
+        .album-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-placeholder {
+            font-size: 3rem;
+            color: var(--spotify-grey);
+            opacity: 0.5;
+        }
+
+        .song-details {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .song-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--spotify-white);
+            margin-bottom: 0.75rem;
+        }
+
+        .artist-name {
+            font-size: 1.25rem;
+            color: var(--spotify-light-grey);
+            margin-bottom: 0.5rem;
+        }
+
+        .album-name {
+            font-size: 1rem;
+            color: var(--spotify-grey);
+            font-style: italic;
+        }
+
+        /* Progress Controls */
+        .progress-section {
+            background: var(--spotify-black);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--spotify-white);
+        }
+
+        .progress-bar-wrapper {
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: var(--spotify-grey);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient);
+            border-radius: 4px;
+            width: 30%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-handle {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background: var(--spotify-white);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .time-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--spotify-light-grey);
+        }
+
+        /* Action Buttons */
+        .action-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1.25rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 6px 20px rgba(29, 185, 84, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--spotify-white);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Right Panel - Cart */
+        .cart-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .cart-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .cart-badge {
+            background: var(--spotify-green);
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .cart-items {
+            margin-bottom: 2rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: var(--spotify-black);
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .cart-item-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background: var(--spotify-grey);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .cart-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-title {
+            font-weight: 600;
+            color: var(--spotify-white);
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+        }
+
+        .cart-item-artist {
+            color: var(--spotify-light-grey);
+            font-size: 0.85rem;
+        }
+
+        .cart-item-price {
+            font-weight: 700;
+            color: var(--spotify-green);
+            font-size: 1rem;
+        }
+
+        .remove-item {
+            background: transparent;
+            border: none;
+            color: var(--spotify-grey);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            font-size: 1.25rem;
+        }
+
+        .remove-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ff4757;
+        }
+
+        /* Cart Summary */
+        .cart-summary {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+        }
+
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            color: var(--spotify-light-grey);
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--spotify-white);
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .checkout-btn {
+            width: 100%;
+            margin-top: 2rem;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(29, 185, 84, 0.3);
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
+        }
+
+        /* Empty States */
+        .empty-preview {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--spotify-grey);
+        }
+
+        .empty-preview .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--spotify-grey);
+        }
+
+        .empty-cart .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* SVG Preview */
+        .svg-preview {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .svg-preview svg {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--spotify-green);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .cart-panel {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 2rem 1rem;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .container {
+                padding: 0 1rem 2rem;
+            }
+
+            .creator-panel,
+            .cart-panel {
+                padding: 1.5rem;
+            }
+
+            .album-cover {
+                width: 180px;
+                height: 180px;
+            }
+
+            .action-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>Plaqueify</h1>
+        <p>Create beautiful custom Spotify plaques of your favorite songs</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="main-grid">
+            <!-- Left Panel - Song Creator -->
+            <div class="creator-panel">
+                <h2 class="section-title">🎵 Create Your Plaque</h2>
+                
+                <!-- Search Section -->
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="songSearch"
+                        placeholder="Search for a song or artist..."
+                        autocomplete="off"
+                    >
+                </div>
+
+                <!-- Album Preview -->
+                <div class="preview-container">
+                    <div class="album-showcase">
+                        <div class="album-cover-container">
+                            <div class="album-cover" id="albumCover">
+                                <div class="album-placeholder">🎵</div>
+                            </div>
+                        </div>
+
+                        <div class="song-details">
+                            <div class="song-title" id="songTitle">Select a song to get started</div>
+                            <div class="artist-name" id="artistName">Search above to find your favorite tracks</div>
+                            <div class="album-name" id="albumName"></div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Controls -->
+                    <div class="progress-section">
+                        <div class="progress-title">Choose Progress Position</div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-track" id="progressTrack">
+                                <div class="progress-fill" id="progressFill"></div>
+                                <div class="progress-handle" id="progressHandle"></div>
+                            </div>
+                        </div>
+                        <div class="time-labels">
+                            <span id="currentTime">0:00</span>
+                            <span id="totalTime">0:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-row">
+                    <button class="btn btn-secondary" id="previewBtn">
+                        👁️ Preview
+                    </button>
+                    <button class="btn btn-primary" id="addToCartBtn">
+                        🛒 Add to Cart - $24.99
+                    </button>
+                </div>
+
+                <!-- SVG Preview -->
+                <div class="svg-preview" id="svgPreview" style="display: none;">
+                    <!-- Generated SVG will appear here -->
+                </div>
+            </div>
+
+            <!-- Right Panel - Cart -->
+            <div class="cart-panel">
+                <div class="cart-header">
+                    <h2 class="cart-title">Cart</h2>
+                    <div class="cart-badge" id="cartBadge">0</div>
+                </div>
+
+                <div class="cart-items" id="cartItems">
+                    <div class="empty-cart">
+                        <div class="icon">🛒</div>
+                        <p>Your cart is empty</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Add some plaques to get started!</p>
+                    </div>
+                </div>
+
+                <div class="cart-summary" id="cartSummary" style="display: none;">
+                    <div class="summary-line">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="summary-line">
+                        <span>Shipping:</span>
+                        <span>$4.99</span>
+                    </div>
+                    <div class="summary-total">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                    
+                    <button class="checkout-btn" id="checkoutBtn">
+                        🚀 Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
