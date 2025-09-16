@@ -358,9 +358,8 @@ function selectTrack(track) {
     elements.albumName.textContent = track.album;
     elements.totalTime.textContent = formatTime(track.duration);
 
-    // Instead of album cover, show SVG preview in its place
-    elements.albumCover.innerHTML = '';
-    elements.svgPreview.innerHTML = generateSpotifyPlaqueSVG({
+    // Show SVG preview in the album cover area (not in the separate svgPreview panel)
+    elements.albumCover.innerHTML = generateSpotifyPlaqueSVG({
         songName: track.name,
         artistName: elements.artistOverride.value.trim() || track.artist,
         albumName: track.album,
@@ -369,7 +368,8 @@ function selectTrack(track) {
         progress: currentProgress,
         duration: totalDuration
     });
-    elements.svgPreview.style.display = 'block';
+    // Hide the separate svgPreview panel
+    elements.svgPreview.style.display = 'none';
 
     // Enable buttons
     elements.previewBtn.disabled = false;
