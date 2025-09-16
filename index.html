@@ -4,466 +4,649 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plaqueify - Custom Spotify Plaques</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #1db954;
-            --primary-dark: #1ed760;
-            --secondary: #191414;
-            --slate-50: #f8fafc;
-            --slate-100: #f1f5f9;
-            --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-400: #94a3b8;
-            --slate-500: #64748b;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
+            --spotify-green: #1db954;
+            --spotify-green-dark: #1aa34a;
+            --spotify-black: #191414;
+            --spotify-dark: #121212;
+            --spotify-grey: #535353;
+            --spotify-light-grey: #b3b3b3;
+            --spotify-white: #ffffff;
+            --gradient: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
         }
 
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--slate-50) 0%, var(--slate-100) 100%);
-            color: var(--slate-900);
-            line-height: 1.6;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: var(--spotify-white);
+            min-height: 100vh;
+            line-height: 1.5;
         }
 
-        .container {
-            max-width: 1200px;
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, rgba(29, 185, 84, 0.1) 0%, rgba(18, 18, 18, 0.8) 100%);
+        }
+
+        .header h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.25rem;
+            color: var(--spotify-light-grey);
+            max-width: 600px;
             margin: 0 auto;
-            padding: 0 1rem;
         }
 
-        header {
-            background: var(--secondary);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem 4rem;
         }
 
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 3rem;
+            margin-top: 3rem;
         }
 
-        .logo {
-            font-size: 1.8rem;
+        /* Left Panel */
+        .creator-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
             font-weight: 700;
-            color: var(--primary);
+            margin-bottom: 2rem;
+            color: var(--spotify-white);
         }
 
-        .cart-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
+        /* Search Section */
+        .search-container {
             position: relative;
-        }
-
-        .cart-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #e11d48;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        main {
-            padding: 2rem 0;
-        }
-
-        .section {
             margin-bottom: 3rem;
         }
 
-        .panel {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid var(--slate-200);
-        }
-
-        .panel-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            color: var(--slate-900);
-        }
-
-        .field {
-            margin-bottom: 1.5rem;
-        }
-
-        .field label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--slate-700);
-        }
-
-        .field input {
+        .search-input {
             width: 100%;
-            padding: 0.75rem;
-            border: 2px solid var(--slate-200);
-            border-radius: 6px;
-            font-size: 1rem;
-            transition: border-color 0.2s;
-        }
-
-        .field input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: var(--slate-200);
-            color: var(--slate-700);
-        }
-
-        .btn-secondary:hover {
-            background: var(--slate-300);
-        }
-
-        .status-box {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+            background: var(--spotify-black);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 1.25rem 1.75rem;
+            color: var(--spotify-white);
+            font-size: 1.1rem;
             font-weight: 500;
+            transition: all 0.3s ease;
         }
 
-        .status-box.success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
+        .search-input:focus {
+            outline: none;
+            border-color: var(--spotify-green);
+            box-shadow: 0 0 0 4px rgba(29, 185, 84, 0.1);
         }
 
-        .status-box.error {
-            background: #fef2f2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
+        .search-input::placeholder {
+            color: var(--spotify-grey);
         }
 
-        .status-box.info {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #bfdbfe;
+        /* Album Preview */
+        .preview-container {
+            text-align: center;
+            margin-bottom: 3rem;
         }
 
-        .preview-stage {
-            width: 100%;
-            max-width: 400px;
-            margin: 2rem auto;
-            border: 1px solid var(--slate-200);
-            border-radius: 8px;
-            background: white;
-            padding: 1rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        .album-showcase {
+            background: var(--spotify-black);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .cover-picker {
+        .album-cover-container {
+            margin-bottom: 2rem;
+        }
+
+        .album-cover {
+            width: 240px;
+            height: 240px;
+            margin: 0 auto;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--spotify-grey), var(--spotify-dark));
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-        }
-
-        .cover-thumb {
-            width: 64px;
-            height: 64px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid var(--slate-200);
-            background: var(--slate-100);
-        }
-
-        .progress-control {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 1rem 0;
-        }
-
-        .progress-bar {
-            flex: 1;
-            height: 8px;
-            background: var(--slate-200);
-            border-radius: 4px;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s ease;
             position: relative;
+        }
+
+        .album-cover:hover {
+            transform: scale(1.05);
+        }
+
+        .album-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-placeholder {
+            font-size: 3rem;
+            color: var(--spotify-grey);
+            opacity: 0.5;
+        }
+
+        .song-details {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .song-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--spotify-white);
+            margin-bottom: 0.75rem;
+        }
+
+        .artist-name {
+            font-size: 1.25rem;
+            color: var(--spotify-light-grey);
+            margin-bottom: 0.5rem;
+        }
+
+        .album-name {
+            font-size: 1rem;
+            color: var(--spotify-grey);
+            font-style: italic;
+        }
+
+        /* Progress Controls */
+        .progress-section {
+            background: var(--spotify-black);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--spotify-white);
+        }
+
+        .progress-bar-wrapper {
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: var(--spotify-grey);
+            border-radius: 4px;
             cursor: pointer;
+            position: relative;
         }
 
         .progress-fill {
             height: 100%;
-            background: var(--primary);
+            background: var(--gradient);
             border-radius: 4px;
-            transition: width 0.1s;
+            width: 30%;
+            transition: width 0.3s ease;
         }
 
-        .progress-knob {
-            width: 20px;
-            height: 20px;
-            background: white;
-            border: 3px solid var(--primary);
-            border-radius: 50%;
+        .progress-handle {
             position: absolute;
             top: 50%;
-            transform: translate(-50%, -50%);
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .time-input {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            background: transparent;
-            border: 1px solid transparent;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            cursor: pointer;
-            min-width: 50px;
-        }
-
-        .time-input:hover {
-            background: var(--slate-50);
-            border-color: var(--slate-200);
-        }
-
-        .cart-section {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
             right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            padding: 2rem;
-            overflow-y: auto;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            background: var(--spotify-white);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
         }
 
-        .cart-modal {
-            background: white;
-            border-radius: 12px;
-            max-width: 800px;
-            margin: 0 auto;
-            position: relative;
+        .time-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--spotify-light-grey);
+        }
+
+        /* Action Buttons */
+        .action-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1.25rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 6px 20px rgba(29, 185, 84, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--spotify-white);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Right Panel - Cart */
+        .cart-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
         }
 
         .cart-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--slate-200);
+            margin-bottom: 2rem;
         }
 
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--slate-500);
+        .cart-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .cart-badge {
+            background: var(--spotify-green);
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
         .cart-items {
-            padding: 2rem;
+            margin-bottom: 2rem;
+            max-height: 300px;
+            overflow-y: auto;
         }
 
         .cart-item {
             display: flex;
+            align-items: center;
             gap: 1rem;
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--slate-100);
+            padding: 1.25rem;
+            background: var(--spotify-black);
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .cart-item:last-child {
-            border-bottom: none;
-        }
-
-        .item-image {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
+        .cart-item-image {
+            width: 60px;
+            height: 60px;
             border-radius: 8px;
+            background: var(--spotify-grey);
+            overflow: hidden;
+            flex-shrink: 0;
         }
 
-        .item-details {
+        .cart-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cart-item-info {
             flex: 1;
         }
 
-        .item-title {
+        .cart-item-title {
             font-weight: 600;
+            color: var(--spotify-white);
             margin-bottom: 0.25rem;
+            font-size: 0.95rem;
         }
 
-        .item-artist {
-            color: var(--slate-500);
-            font-size: 0.9rem;
-        }
-
-        .item-specs {
+        .cart-item-artist {
+            color: var(--spotify-light-grey);
             font-size: 0.85rem;
-            color: var(--slate-600);
-            margin-top: 0.5rem;
         }
 
-        .cart-footer {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid var(--slate-200);
-            text-align: center;
+        .cart-item-price {
+            font-weight: 700;
+            color: var(--spotify-green);
+            font-size: 1rem;
         }
 
-        .cart-total {
+        .remove-item {
+            background: transparent;
+            border: none;
+            color: var(--spotify-grey);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            font-size: 1.25rem;
+        }
+
+        .remove-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ff4757;
+        }
+
+        /* Cart Summary */
+        .cart-summary {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+        }
+
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            color: var(--spotify-light-grey);
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
             font-size: 1.25rem;
             font-weight: 700;
+            color: var(--spotify-white);
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .checkout-btn {
+            width: 100%;
+            margin-top: 2rem;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(29, 185, 84, 0.3);
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
+        }
+
+        /* Empty States */
+        .empty-preview {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--spotify-grey);
+        }
+
+        .empty-preview .icon {
+            font-size: 4rem;
             margin-bottom: 1rem;
+            opacity: 0.3;
         }
 
+        .empty-cart {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--spotify-grey);
+        }
+
+        .empty-cart .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* SVG Preview */
+        .svg-preview {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .svg-preview svg {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Loading Animation */
         .loading {
-            opacity: 0.6;
-            pointer-events: none;
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--spotify-green);
+            animation: spin 1s linear infinite;
         }
 
-        .hidden {
-            display: none !important;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .cart-panel {
+                position: static;
+            }
         }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 0 1rem;
+            .header {
+                padding: 2rem 1rem;
             }
-            
-            .panel {
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .container {
+                padding: 0 1rem 2rem;
+            }
+
+            .creator-panel,
+            .cart-panel {
                 padding: 1.5rem;
             }
-            
-            .progress-control {
+
+            .album-cover {
+                width: 180px;
+                height: 180px;
+            }
+
+            .action-row {
                 flex-direction: column;
-                align-items: stretch;
             }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">Plaqueify</div>
-                <button id="cartBtn" class="cart-btn">
-                    Cart <span id="cartCount" class="cart-count hidden">0</span>
-                </button>
-            </div>
-        </div>
-    </header>
+    <!-- Header -->
+    <div class="header">
+        <h1>Plaqueify</h1>
+        <p>Create beautiful custom Spotify plaques of your favorite songs</p>
+    </div>
 
-    <main>
-        <div class="container">
-            <section class="section">
-                <div class="panel">
-                    <h2 class="panel-title">1. Customize Your Plaque</h2>
-                    <div class="field">
-                        <label for="songInput">Song Search</label>
-                        <input id="songInput" type="text" placeholder="e.g., Bohemian Rhapsody Queen" spellcheck="false">
-                    </div>
-                    
-                    <div id="coverPicker" class="field hidden">
-                        <label>Album Cover</label>
-                        <div class="cover-picker">
-                            <button id="prevCoverBtn" class="btn btn-secondary">Prev</button>
-                            <img id="coverThumb" class="cover-thumb" alt="Album cover" />
-                            <button id="nextCoverBtn" class="btn btn-secondary">Next</button>
-                        </div>
-                    </div>
+    <!-- Main Container -->
+    <div class="container">
+        <div class="main-grid">
+            <!-- Left Panel - Song Creator -->
+            <div class="creator-panel">
+                <h2 class="section-title">🎵 Create Your Plaque</h2>
+                
+                <!-- Search Section -->
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="songSearch"
+                        placeholder="Search for a song or artist..."
+                        autocomplete="off"
+                    >
+                </div>
 
-                    <div class="field">
-                        <label>Progress Position</label>
-                        <div class="progress-control">
-                            <input id="currentTime" class="time-input" value="0:00" readonly>
-                            <div id="progressBar" class="progress-bar">
-                                <div id="progressFill" class="progress-fill"></div>
-                                <div id="progressKnob" class="progress-knob"></div>
+                <!-- Album Preview -->
+                <div class="preview-container">
+                    <div class="album-showcase">
+                        <div class="album-cover-container">
+                            <div class="album-cover" id="albumCover">
+                                <div class="album-placeholder">🎵</div>
                             </div>
-                            <input id="totalTime" class="time-input" value="0:00" readonly>
+                        </div>
+
+                        <div class="song-details">
+                            <div class="song-title" id="songTitle">Select a song to get started</div>
+                            <div class="artist-name" id="artistName">Search above to find your favorite tracks</div>
+                            <div class="album-name" id="albumName"></div>
                         </div>
                     </div>
 
-                    <div id="statusBox" class="status-box info">
-                        Enter a song to get started.
-                    </div>
-
-                    <div id="previewStage" class="preview-stage hidden">
-                        <!-- SVG preview will appear here -->
-                    </div>
-
-                    <div class="text-center">
-                        <button id="addToCartBtn" class="btn btn-primary hidden">Add to Cart</button>
+                    <!-- Progress Controls -->
+                    <div class="progress-section">
+                        <div class="progress-title">Choose Progress Position</div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-track" id="progressTrack">
+                                <div class="progress-fill" id="progressFill"></div>
+                                <div class="progress-handle" id="progressHandle"></div>
+                            </div>
+                        </div>
+                        <div class="time-labels">
+                            <span id="currentTime">0:00</span>
+                            <span id="totalTime">0:00</span>
+                        </div>
                     </div>
                 </div>
-            </section>
-        </div>
-    </main>
 
-    <!-- Cart Modal -->
-    <div id="cartSection" class="cart-section">
-        <div class="cart-modal">
-            <div class="cart-header">
-                <h2>Your Cart</h2>
-                <button id="closeCartBtn" class="close-btn">&times;</button>
+                <!-- Action Buttons -->
+                <div class="action-row">
+                    <button class="btn btn-secondary" id="previewBtn">
+                        👁️ Preview
+                    </button>
+                    <button class="btn btn-primary" id="addToCartBtn">
+                        🛒 Add to Cart - $24.99
+                    </button>
+                </div>
+
+                <!-- SVG Preview -->
+                <div class="svg-preview" id="svgPreview" style="display: none;">
+                    <!-- Generated SVG will appear here -->
+                </div>
             </div>
-            <div id="cartItems" class="cart-items">
-                <p style="text-align: center; color: var(--slate-500);">Your cart is empty</p>
-            </div>
-            <div class="cart-footer">
-                <div id="cartTotal" class="cart-total">Total: $0.00</div>
-                <button id="checkoutBtn" class="btn btn-primary" disabled>Proceed to Checkout</button>
+
+            <!-- Right Panel - Cart -->
+            <div class="cart-panel">
+                <div class="cart-header">
+                    <h2 class="cart-title">Cart</h2>
+                    <div class="cart-badge" id="cartBadge">0</div>
+                </div>
+
+                <div class="cart-items" id="cartItems">
+                    <div class="empty-cart">
+                        <div class="icon">🛒</div>
+                        <p>Your cart is empty</p>
+                        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Add some plaques to get started!</p>
+                    </div>
+                </div>
+
+                <div class="cart-summary" id="cartSummary" style="display: none;">
+                    <div class="summary-line">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="summary-line">
+                        <span>Shipping:</span>
+                        <span>$4.99</span>
+                    </div>
+                    <div class="summary-total">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                    
+                    <button class="checkout-btn" id="checkoutBtn">
+                        🚀 Checkout
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://js.stripe.com/v3/"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -1,47 +1,387 @@
 // Configuration
 const CONFIG = {
     STRIPE_PUBLISHABLE_KEY: 'pk_live_51RNeOtJC2sHLBdH8nQ1YgyeBJ7EgzZIYnNvP5ceaIOo5u59YJ0c0uiekDVVPDLTODpKRnuORTviYt7o9W7q8vwOg00p07VBlqy',
-    EMAILJS_SERVICE_ID: 'YOUR_SERVICE_ID', // You'll need to set this up
-    EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID',
-    EMAILJS_PUBLIC_KEY: 'YOUR_PUBLIC_KEY'
+    EMAILJS_SERVICE_ID: 'YOUR_SERVICE_ID',
+    EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID', 
+    EMAILJS_PUBLIC_KEY: 'YOUR_PUBLIC_KEY',
+    SPOTIFY_CLIENT_ID: 'YOUR_SPOTIFY_CLIENT_ID'
 };
-
-// Initialize Stripe
-const stripe = Stripe(CONFIG.STRIPE_PUBLISHABLE_KEY);
-
-// Initialize EmailJS
-emailjs.init(CONFIG.EMAILJS_PUBLIC_KEY);
 
 // Global state
 let currentTrack = null;
 let coverOptions = [];
 let coverIndex = 0;
-let currentProgress = 0;
+let currentProgress = 30; // Default 30% progress
 let cart = JSON.parse(localStorage.getItem('plaqueify_cart') || '[]');
+let totalDuration = 210; // Default song length in seconds
 
 // DOM elements
-const dom = {
-    songInput: document.getElementById('songInput'),
-    coverPicker: document.getElementById('coverPicker'),
-    coverThumb: document.getElementById('coverThumb'),
-    prevCoverBtn: document.getElementById('prevCoverBtn'),
-    nextCoverBtn: document.getElementById('nextCoverBtn'),
+const elements = {
+    songSearch: document.getElementById('songSearch'),
+    albumCover: document.getElementById('albumCover'),
+    songTitle: document.getElementById('songTitle'),
+    artistName: document.getElementById('artistName'),
+    albumName: document.getElementById('albumName'),
+    progressTrack: document.getElementById('progressTrack'),
+    progressFill: document.getElementById('progressFill'),
+    progressHandle: document.getElementById('progressHandle'),
     currentTime: document.getElementById('currentTime'),
     totalTime: document.getElementById('totalTime'),
-    progressBar: document.getElementById('progressBar'),
-    progressFill: document.getElementById('progressFill'),
-    progressKnob: document.getElementById('progressKnob'),
-    statusBox: document.getElementById('statusBox'),
-    previewStage: document.getElementById('previewStage'),
+    previewBtn: document.getElementById('previewBtn'),
     addToCartBtn: document.getElementById('addToCartBtn'),
-    cartBtn: document.getElementById('cartBtn'),
-    cartCount: document.getElementById('cartCount'),
-    cartSection: document.getElementById('cartSection'),
-    closeCartBtn: document.getElementById('closeCartBtn'),
+    svgPreview: document.getElementById('svgPreview'),
+    cartBadge: document.getElementById('cartBadge'),
     cartItems: document.getElementById('cartItems'),
-    cartTotal: document.getElementById('cartTotal'),
+    cartSummary: document.getElementById('cartSummary'),
+    subtotal: document.getElementById('subtotal'),
+    total: document.getElementById('total'),
     checkoutBtn: document.getElementById('checkoutBtn')
 };
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    updateCartDisplay();
+    setupEventListeners();
+});
+
+function initializeApp() {
+    // Initialize Stripe
+    if (typeof Stripe !== 'undefined') {
+        window.stripe = Stripe(CONFIG.STRIPE_PUBLISHABLE_KEY);
+    }
+    
+    // Set initial time display
+    elements.totalTime.textContent = formatTime(totalDuration);
+    elements.currentTime.textContent = formatTime(Math.floor(totalDuration * currentProgress / 100));
+    
+    // Set initial progress
+    updateProgressDisplay();
+}
+
+function setupEventListeners() {
+    // Search functionality
+    elements.songSearch.addEventListener('input', debounce(handleSearch, 300));
+    
+    // Progress bar interaction
+    elements.progressTrack.addEventListener('click', handleProgressClick);
+    elements.progressHandle.addEventListener('mousedown', handleProgressDragStart);
+    
+    // Button events
+    elements.previewBtn.addEventListener('click', generatePreview);
+    elements.addToCartBtn.addEventListener('click', addToCart);
+    elements.checkoutBtn.addEventListener('click', handleCheckout);
+}
+
+// Search functionality
+function handleSearch(e) {
+    const query = e.target.value.trim();
+    if (query.length < 2) return;
+    
+    searchSpotify(query);
+}
+
+async function searchSpotify(query) {
+    // For now, using mock data - replace with real Spotify API
+    const mockResults = [
+        {
+            id: 'mock1',
+            name: 'Blinding Lights',
+            artist: 'The Weeknd',
+            album: 'After Hours',
+            duration: 200,
+            images: [
+                { url: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36' }
+            ],
+            external_urls: { spotify: 'https://open.spotify.com/track/0VjIjW4GlULA8ooDgAKVfS' }
+        },
+        {
+            id: 'mock2', 
+            name: 'Shape of You',
+            artist: 'Ed Sheeran',
+            album: '÷ (Divide)',
+            duration: 233,
+            images: [
+                { url: 'https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96' }
+            ],
+            external_urls: { spotify: 'https://open.spotify.com/track/7qiZfU4dY1lWllzX7mPBI3' }
+        }
+    ];
+
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // For demo purposes, select first result
+    if (mockResults.length > 0) {
+        selectTrack(mockResults[0]);
+    }
+}
+
+function selectTrack(track) {
+    currentTrack = track;
+    totalDuration = track.duration;
+    
+    // Update display
+    elements.songTitle.textContent = track.name;
+    elements.artistName.textContent = track.artist;
+    elements.albumName.textContent = track.album;
+    elements.totalTime.textContent = formatTime(track.duration);
+    
+    // Update album cover
+    const coverImg = document.createElement('img');
+    coverImg.src = track.images[0].url;
+    coverImg.alt = `${track.album} cover`;
+    
+    elements.albumCover.innerHTML = '';
+    elements.albumCover.appendChild(coverImg);
+    
+    // Enable buttons
+    elements.previewBtn.disabled = false;
+    elements.addToCartBtn.disabled = false;
+    
+    updateProgressDisplay();
+}
+
+// Progress bar functionality
+function handleProgressClick(e) {
+    const rect = elements.progressTrack.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = (clickX / rect.width) * 100;
+    
+    currentProgress = Math.max(0, Math.min(100, percentage));
+    updateProgressDisplay();
+}
+
+function handleProgressDragStart(e) {
+    e.preventDefault();
+    
+    function handleMouseMove(e) {
+        const rect = elements.progressTrack.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const percentage = (mouseX / rect.width) * 100;
+        
+        currentProgress = Math.max(0, Math.min(100, percentage));
+        updateProgressDisplay();
+    }
+    
+    function handleMouseUp() {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+}
+
+function updateProgressDisplay() {
+    const percentage = currentProgress;
+    elements.progressFill.style.width = `${percentage}%`;
+    elements.progressHandle.style.left = `${percentage}%`;
+    
+    const currentSeconds = Math.floor(totalDuration * percentage / 100);
+    elements.currentTime.textContent = formatTime(currentSeconds);
+}
+
+// SVG Generation
+function generatePreview() {
+    if (!currentTrack) return;
+    
+    const svg = generateSpotifyPlaqueSVG({
+        songName: currentTrack.name,
+        artistName: currentTrack.artist,
+        albumName: currentTrack.album,
+        albumCover: currentTrack.images[0].url,
+        spotifyUrl: currentTrack.external_urls.spotify,
+        progress: currentProgress,
+        duration: totalDuration
+    });
+    
+    elements.svgPreview.innerHTML = svg;
+    elements.svgPreview.style.display = 'block';
+}
+
+function generateSpotifyPlaqueSVG(data) {
+    const currentTime = Math.floor(data.duration * data.progress / 100);
+    const totalTime = data.duration;
+    
+    return `
+    <svg width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background -->
+        <rect width="400" height="600" fill="#000000" rx="20"/>
+        
+        <!-- Album Cover -->
+        <foreignObject x="50" y="50" width="300" height="300">
+            <img src="${data.albumCover}" width="300" height="300" style="border-radius: 15px; object-fit: cover;" />
+        </foreignObject>
+        
+        <!-- Song Title -->
+        <text x="200" y="390" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="24" font-weight="bold">
+            ${data.songName.length > 20 ? data.songName.substring(0, 20) + '...' : data.songName}
+        </text>
+        
+        <!-- Artist Name -->
+        <text x="200" y="420" text-anchor="middle" fill="#B3B3B3" font-family="Arial, sans-serif" font-size="18">
+            ${data.artistName.length > 25 ? data.artistName.substring(0, 25) + '...' : data.artistName}
+        </text>
+        
+        <!-- Album Name -->
+        <text x="200" y="445" text-anchor="middle" fill="#888888" font-family="Arial, sans-serif" font-size="14" font-style="italic">
+            ${data.albumName.length > 30 ? data.albumName.substring(0, 30) + '...' : data.albumName}
+        </text>
+        
+        <!-- Progress Bar -->
+        <rect x="50" y="480" width="300" height="4" fill="#333333" rx="2"/>
+        <rect x="50" y="480" width="${300 * data.progress / 100}" height="4" fill="#1DB954" rx="2"/>
+        
+        <!-- Time Display -->
+        <text x="50" y="505" fill="#B3B3B3" font-family="Arial, sans-serif" font-size="12">
+            ${formatTime(currentTime)}
+        </text>
+        <text x="350" y="505" text-anchor="end" fill="#B3B3B3" font-family="Arial, sans-serif" font-size="12">
+            ${formatTime(totalTime)}
+        </text>
+        
+        <!-- Spotify Logo & QR Code -->
+        <circle cx="80" cy="540" r="20" fill="#1DB954"/>
+        <text x="80" y="547" text-anchor="middle" fill="#000000" font-family="Arial, sans-serif" font-size="16" font-weight="bold">♫</text>
+        
+        <!-- QR Code Placeholder -->
+        <rect x="280" y="520" width="70" height="70" fill="#FFFFFF" stroke="#000000" stroke-width="2" rx="5"/>
+        <text x="315" y="560" text-anchor="middle" fill="#000000" font-family="Arial, sans-serif" font-size="10">QR CODE</text>
+        
+        <!-- Spotify URL -->
+        <text x="200" y="580" text-anchor="middle" fill="#1DB954" font-family="Arial, sans-serif" font-size="10" text-decoration="underline">
+            Listen on Spotify
+        </text>
+    </svg>`;
+}
+
+// Cart functionality
+function addToCart() {
+    if (!currentTrack) return;
+    
+    const cartItem = {
+        id: Date.now(),
+        track: currentTrack,
+        progress: currentProgress,
+        price: 24.99
+    };
+    
+    cart.push(cartItem);
+    saveCart();
+    updateCartDisplay();
+    
+    // Show success message
+    showNotification('Added to cart!', 'success');
+}
+
+function removeFromCart(itemId) {
+    cart = cart.filter(item => item.id !== itemId);
+    saveCart();
+    updateCartDisplay();
+}
+
+function updateCartDisplay() {
+    elements.cartBadge.textContent = cart.length;
+    
+    if (cart.length === 0) {
+        elements.cartItems.innerHTML = `
+            <div class="empty-cart">
+                <div class="icon">🛒</div>
+                <p>Your cart is empty</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">Add some plaques to get started!</p>
+            </div>
+        `;
+        elements.cartSummary.style.display = 'none';
+        return;
+    }
+    
+    // Render cart items
+    elements.cartItems.innerHTML = cart.map(item => `
+        <div class="cart-item">
+            <div class="cart-item-image">
+                <img src="${item.track.images[0].url}" alt="${item.track.album}">
+            </div>
+            <div class="cart-item-info">
+                <div class="cart-item-title">${item.track.name}</div>
+                <div class="cart-item-artist">${item.track.artist}</div>
+            </div>
+            <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+            <button class="remove-item" onclick="removeFromCart(${item.id})">×</button>
+        </div>
+    `).join('');
+    
+    // Update summary
+    const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
+    const total = subtotal + 4.99; // Shipping
+    
+    elements.subtotal.textContent = `$${subtotal.toFixed(2)}`;
+    elements.total.textContent = `$${total.toFixed(2)}`;
+    elements.cartSummary.style.display = 'block';
+}
+
+function saveCart() {
+    localStorage.setItem('plaqueify_cart', JSON.stringify(cart));
+}
+
+// Checkout
+async function handleCheckout() {
+    if (cart.length === 0) return;
+    
+    try {
+        // Create checkout session
+        const response = await fetch('/create-checkout-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                items: cart.map(item => ({
+                    track_id: item.track.id,
+                    track_name: item.track.name,
+                    artist_name: item.track.artist,
+                    album_name: item.track.album,
+                    album_cover: item.track.images[0].url,
+                    progress: item.progress,
+                    price: item.price
+                }))
+            })
+        });
+        
+        const session = await response.json();
+        
+        // Redirect to Stripe Checkout
+        const { error } = await stripe.redirectToCheckout({
+            sessionId: session.id
+        });
+        
+        if (error) {
+            console.error('Stripe error:', error);
+            showNotification('Checkout failed. Please try again.', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Checkout error:', error);
+        
+        // For demo purposes, simulate successful checkout
+        showNotification('Demo: Checkout would redirect to Stripe payment page', 'info');
+        
+        // Send order email (placeholder)
+        sendOrderEmail();
+    }
+}
+
+async function sendOrderEmail() {
+    // Placeholder for EmailJS integration
+    console.log('Sending order email...', cart);
+    
+    // Clear cart after successful order
+    cart = [];
+    saveCart();
+    updateCartDisplay();
+    
+    showNotification('Order placed! Check your email for details.', 'success');
+}
 
 // Utility functions
 function formatTime(seconds) {
@@ -50,431 +390,52 @@ function formatTime(seconds) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function parseTime(timeStr) {
-    const [mins, secs] = timeStr.split(':').map(Number);
-    return (mins || 0) * 60 + (secs || 0);
-}
-
-function setStatus(message, isError = false) {
-    dom.statusBox.textContent = message;
-    dom.statusBox.className = `status-box ${isError ? 'error' : 'info'}`;
-}
-
-function updateCartUI() {
-    const count = cart.length;
-    dom.cartCount.textContent = count;
-    dom.cartCount.classList.toggle('hidden', count === 0);
-    
-    if (count === 0) {
-        dom.cartItems.innerHTML = '<p style="text-align: center; color: var(--slate-500);">Your cart is empty</p>';
-        dom.cartTotal.textContent = 'Total: $0.00';
-        dom.checkoutBtn.disabled = true;
-        return;
-    }
-
-    let total = 0;
-    dom.cartItems.innerHTML = cart.map((item, index) => {
-        const price = item.size === 'large' ? 39.99 : 29.99;
-        total += price;
-        
-        return `
-            <div class="cart-item">
-                <img src="${item.coverUrl || item.meta.image}" alt="${item.meta.title}" class="item-image">
-                <div class="item-details">
-                    <div class="item-title">${item.meta.title}</div>
-                    <div class="item-artist">${item.meta.artist}</div>
-                    <div class="item-specs">${item.size} • ${formatTime(item.progress)} • $${price.toFixed(2)}</div>
-                </div>
-                <button onclick="removeFromCart(${index})" class="btn btn-secondary">Remove</button>
-            </div>
-        `;
-    }).join('');
-
-    dom.cartTotal.textContent = `Total: $${total.toFixed(2)}`;
-    dom.checkoutBtn.disabled = false;
-    
-    // Save to localStorage
-    localStorage.setItem('plaqueify_cart', JSON.stringify(cart));
-}
-
-// Spotify Web API functions (client-side)
-async function getSpotifyToken() {
-    // For client-side, we'll use the implicit grant flow
-    // This requires setting up your app in Spotify Dashboard with redirect URIs
-    // For now, we'll use a simple web scraping approach as fallback
-    return null;
-}
-
-async function searchSpotify(query) {
-    try {
-        // Try client-side Spotify search first
-        // If no token available, fallback to scraping approach
-        return await scrapeSpotifyMetadata(query);
-    } catch (error) {
-        console.error('Spotify search error:', error);
-        throw new Error('Failed to search for song');
-    }
-}
-
-// Fallback: scrape Spotify data (similar to your backend approach)
-async function scrapeSpotifyMetadata(query) {
-    // This is a simplified version - you might want to use a CORS proxy
-    // or set up Spotify Web API properly for production
-    
-    // For demo, return mock data
-    return {
-        title: query.split(' ').slice(0, -1).join(' '),
-        artist: query.split(' ').slice(-1)[0],
-        duration: '3:45',
-        durationSeconds: 225,
-        image: 'https://via.placeholder.com/300x300?text=Album+Cover',
-        preview: null
-    };
-}
-
-// SVG Generation (client-side)
-function generateSpotifyPlaqueSVG(metadata, options = {}) {
-    const { 
-        progressPosition = 0, 
-        plaqueHeightInch = 5,
-        embedImage = true 
-    } = options;
-
-    const isLarge = plaqueHeightInch > 8;
-    const width = isLarge ? 360 : 300;
-    const height = isLarge ? 432 : 360;
-    
-    // Calculate progress bar position
-    const progressPercent = progressPosition;
-    const barWidth = width * 0.8;
-    const barHeight = 4;
-    const barX = (width - barWidth) / 2;
-    const barY = height * 0.75;
-    
-    const svg = `
-        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <style>
-                    .title { font-family: Arial, sans-serif; font-weight: bold; font-size: ${isLarge ? 24 : 20}px; }
-                    .artist { font-family: Arial, sans-serif; font-size: ${isLarge ? 18 : 16}px; }
-                    .time { font-family: Arial, sans-serif; font-size: ${isLarge ? 14 : 12}px; }
-                </style>
-            </defs>
-            
-            <!-- Background -->
-            <rect width="${width}" height="${height}" fill="white" stroke="#000" stroke-width="2"/>
-            
-            <!-- Album Cover -->
-            ${embedImage && metadata.image ? `
-                <image href="${metadata.image}" x="20" y="20" width="${width-40}" height="${width-40}" preserveAspectRatio="xMidYMid slice"/>
-            ` : `
-                <rect x="20" y="20" width="${width-40}" height="${width-40}" fill="#f0f0f0" stroke="#ccc"/>
-                <text x="${width/2}" y="${(width-40)/2 + 30}" text-anchor="middle" class="artist" fill="#999">Album Cover</text>
-            `}
-            
-            <!-- Song Title -->
-            <text x="${width/2}" y="${width + 40}" text-anchor="middle" class="title" fill="#000">
-                ${metadata.title || 'Song Title'}
-            </text>
-            
-            <!-- Artist -->
-            <text x="${width/2}" y="${width + 65}" text-anchor="middle" class="artist" fill="#666">
-                ${metadata.artist || 'Artist Name'}
-            </text>
-            
-            <!-- Progress Bar Background -->
-            <rect x="${barX}" y="${barY}" width="${barWidth}" height="${barHeight}" fill="#e0e0e0" rx="2"/>
-            
-            <!-- Progress Bar Fill -->
-            <rect x="${barX}" y="${barY}" width="${barWidth * progressPercent / 100}" height="${barHeight}" fill="#1db954" rx="2"/>
-            
-            <!-- Progress Indicator -->
-            <circle cx="${barX + (barWidth * progressPercent / 100)}" cy="${barY + barHeight/2}" r="6" fill="#1db954"/>
-            
-            <!-- Current Time -->
-            <text x="${barX}" y="${barY + barHeight + 20}" class="time" fill="#666">
-                ${formatTime(Math.floor(metadata.durationSeconds * progressPercent / 100))}
-            </text>
-            
-            <!-- Total Time -->
-            <text x="${barX + barWidth}" y="${barY + barHeight + 20}" text-anchor="end" class="time" fill="#666">
-                ${metadata.duration || '0:00'}
-            </text>
-            
-            <!-- Spotify Logo/Branding -->
-            <text x="${width/2}" y="${height - 20}" text-anchor="middle" class="time" fill="#ccc">
-                Powered by Plaqueify
-            </text>
-        </svg>
-    `;
-    
-    return svg;
-}
-
-// Event handlers
-async function handleSongSearch() {
-    const query = dom.songInput.value.trim();
-    if (!query) {
-        setStatus('Please enter a song to search for.');
-        return;
-    }
-
-    try {
-        setStatus('Searching for song...');
-        document.body.classList.add('loading');
-
-        const metadata = await searchSpotify(query);
-        currentTrack = { ...metadata, query };
-
-        // Load album covers (for now, just use the main image)
-        coverOptions = [metadata.image];
-        coverIndex = 0;
-
-        if (coverOptions.length > 0) {
-            dom.coverThumb.src = coverOptions[coverIndex];
-            dom.coverPicker.classList.remove('hidden');
-        }
-
-        // Update duration display
-        dom.totalTime.value = metadata.duration || '0:00';
-        
-        // Generate preview
-        updatePreview();
-        
-        setStatus('Preview ready. Adjust the progress and add to your cart!');
-        dom.addToCartBtn.classList.remove('hidden');
-
-    } catch (error) {
-        setStatus(`Error: ${error.message}`, true);
-        dom.previewStage.classList.add('hidden');
-        dom.addToCartBtn.classList.add('hidden');
-    } finally {
-        document.body.classList.remove('loading');
-    }
-}
-
-function updatePreview() {
-    if (!currentTrack) return;
-
-    const svg = generateSpotifyPlaqueSVG(currentTrack, {
-        progressPosition: currentProgress,
-        plaqueHeightInch: 5, // Default to small for preview
-        embedImage: true
-    });
-
-    dom.previewStage.innerHTML = svg;
-    dom.previewStage.classList.remove('hidden');
-}
-
-function handleProgressChange(event) {
-    const rect = dom.progressBar.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    
-    currentProgress = percentage;
-    
-    // Update UI
-    dom.progressFill.style.width = `${percentage}%`;
-    dom.progressKnob.style.left = `${percentage}%`;
-    
-    if (currentTrack) {
-        const currentSeconds = Math.floor(currentTrack.durationSeconds * percentage / 100);
-        dom.currentTime.value = formatTime(currentSeconds);
-        updatePreview();
-    }
-}
-
-function handleTimeEdit(input) {
-    const timeStr = input.value;
-    const seconds = parseTime(timeStr);
-    
-    if (currentTrack && seconds <= currentTrack.durationSeconds) {
-        currentProgress = (seconds / currentTrack.durationSeconds) * 100;
-        dom.progressFill.style.width = `${currentProgress}%`;
-        dom.progressKnob.style.left = `${currentProgress}%`;
-        updatePreview();
-    }
-}
-
-function cycleCover(direction) {
-    if (!coverOptions.length) return;
-    
-    coverIndex = direction > 0 
-        ? (coverIndex + 1) % coverOptions.length
-        : (coverIndex - 1 + coverOptions.length) % coverOptions.length;
-    
-    dom.coverThumb.src = coverOptions[coverIndex];
-    updatePreview();
-}
-
-function addToCart() {
-    if (!currentTrack) return;
-
-    // Show size selection modal (simplified)
-    const size = confirm('Choose size:\nOK for Large ($39.99)\nCancel for Small ($29.99)') ? 'large' : 'small';
-    
-    const item = {
-        id: Date.now(),
-        meta: currentTrack,
-        query: currentTrack.query,
-        progress: Math.floor(currentTrack.durationSeconds * currentProgress / 100),
-        size,
-        coverUrl: coverOptions[coverIndex] || currentTrack.image,
-        timestamp: new Date().toISOString()
-    };
-
-    cart.push(item);
-    updateCartUI();
-    setStatus('Added to cart!');
-}
-
-function removeFromCart(index) {
-    cart.splice(index, 1);
-    updateCartUI();
-}
-
-async function handleCheckout() {
-    if (!cart.length) return;
-
-    try {
-        setStatus('Preparing checkout...');
-        document.body.classList.add('loading');
-
-        // Calculate total
-        const total = cart.reduce((sum, item) => sum + (item.size === 'large' ? 39.99 : 29.99), 0);
-
-        // Create Stripe checkout session
-        const response = await fetch('/create-checkout-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                items: cart.map(item => ({
-                    size: item.size,
-                    progress: item.progress,
-                    meta: item.meta,
-                    query: item.query,
-                    coverUrl: item.coverUrl
-                }))
-            })
-        });
-
-        const session = await response.json();
-        
-        if (session.error) {
-            throw new Error(session.error);
-        }
-
-        // Redirect to Stripe
-        const result = await stripe.redirectToCheckout({
-            sessionId: session.id
-        });
-
-        if (result.error) {
-            throw new Error(result.error.message);
-        }
-
-    } catch (error) {
-        setStatus(`Checkout error: ${error.message}`, true);
-    } finally {
-        document.body.classList.remove('loading');
-    }
-}
-
-// Initialize EmailJS and send order notification
-async function sendOrderNotification(orderData) {
-    try {
-        const templateParams = {
-            order_id: orderData.id,
-            customer_email: orderData.customer_email || 'N/A',
-            items: JSON.stringify(orderData.items, null, 2),
-            total: `$${orderData.total.toFixed(2)}`,
-            timestamp: new Date().toLocaleString()
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
         };
-
-        await emailjs.send(
-            CONFIG.EMAILJS_SERVICE_ID,
-            CONFIG.EMAILJS_TEMPLATE_ID,
-            templateParams
-        );
-
-        console.log('Order notification sent successfully');
-    } catch (error) {
-        console.error('Failed to send order notification:', error);
-    }
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', () => {
-    // Search functionality
-    dom.songInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleSongSearch();
-        }
-    });
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#1DB954' : type === 'error' ? '#ff4757' : '#333'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after delay
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
 
-    dom.songInput.addEventListener('blur', () => {
-        if (dom.songInput.value.trim()) {
-            handleSongSearch();
-        }
-    });
-
-    // Progress bar interaction
-    dom.progressBar.addEventListener('click', handleProgressChange);
-
-    // Time input editing
-    dom.currentTime.addEventListener('click', () => {
-        dom.currentTime.readOnly = false;
-        dom.currentTime.select();
-    });
-
-    dom.currentTime.addEventListener('blur', () => {
-        handleTimeEdit(dom.currentTime);
-        dom.currentTime.readOnly = true;
-    });
-
-    dom.currentTime.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            dom.currentTime.blur();
-        }
-    });
-
-    // Cover cycling
-    dom.prevCoverBtn.addEventListener('click', () => cycleCover(-1));
-    dom.nextCoverBtn.addEventListener('click', () => cycleCover(1));
-
-    // Cart functionality
-    dom.addToCartBtn.addEventListener('click', addToCart);
-    dom.cartBtn.addEventListener('click', () => {
-        dom.cartSection.style.display = 'block';
-        updateCartUI();
-    });
-
-    dom.closeCartBtn.addEventListener('click', () => {
-        dom.cartSection.style.display = 'none';
-    });
-
-    dom.checkoutBtn.addEventListener('click', handleCheckout);
-
-    // Close cart on background click
-    dom.cartSection.addEventListener('click', (e) => {
-        if (e.target === dom.cartSection) {
-            dom.cartSection.style.display = 'none';
-        }
-    });
-
-    // Initialize cart UI
-    updateCartUI();
-
-    // Handle successful payment redirect
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
-        setStatus('Payment successful! You will receive order details via email.');
-        // Clear cart on successful payment
-        cart = [];
-        localStorage.removeItem('plaqueify_cart');
-        updateCartUI();
-    }
-});
-
-// Global functions for HTML onclick handlers
+// Make removeFromCart globally accessible
 window.removeFromCart = removeFromCart;
