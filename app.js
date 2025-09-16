@@ -371,6 +371,7 @@ function handleProgressClick(e) {
     
     currentProgress = Math.max(0, Math.min(100, percentage));
     updateProgressDisplay();
+    updateSvgPreviewTime();
 }
 
 function handleProgressDragStart(e) {
@@ -380,10 +381,30 @@ function handleProgressDragStart(e) {
         const rect = elements.progressTrack.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const percentage = (mouseX / rect.width) * 100;
-        
         currentProgress = Math.max(0, Math.min(100, percentage));
         updateProgressDisplay();
+        updateSvgPreviewTime();
     }
+// Update the SVG preview time when progress changes
+function updateSvgPreviewTime() {
+    // If the SVG preview is visible (in album cover area), update it
+    if (currentTrack) {
+        // If the SVG is in the album cover area, update that
+        elements.albumCover.innerHTML = `
+            <div class="svg-outline-wrapper">
+                ${generateSpotifyPlaqueSVG({
+                    songName: currentTrack.name,
+                    artistName: currentTrack.artist,
+                    albumName: currentTrack.album,
+                    albumCover: currentTrack.images[0].url,
+                    spotifyUrl: currentTrack.external_urls.spotify,
+                    progress: currentProgress,
+                    duration: totalDuration
+                })}
+            </div>
+        `;
+    }
+}
     
     function handleMouseUp() {
         document.removeEventListener('mousemove', handleMouseMove);
