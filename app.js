@@ -27,6 +27,7 @@ let spotifyAccessToken = localStorage.getItem('spotify_access_token') || null;
 // DOM elements
 const elements = {
     songSearch: document.getElementById('songSearch'),
+    artistOverride: document.getElementById('artistOverride'),
     albumCover: document.getElementById('albumCover'),
     songTitle: document.getElementById('songTitle'),
     artistName: document.getElementById('artistName'),
@@ -105,6 +106,14 @@ function handleSpotifyCallback() {
 function setupEventListeners() {
     // Search functionality
     elements.songSearch.addEventListener('input', debounce(handleSearch, 300));
+    
+    // Artist override functionality
+    elements.artistOverride.addEventListener('input', function(e) {
+        if (currentTrack) {
+            const displayArtist = e.target.value.trim() || currentTrack.artist;
+            elements.artistName.textContent = displayArtist;
+        }
+    });
     
     // Progress bar interaction
     elements.progressTrack.addEventListener('click', handleProgressClick);
@@ -320,7 +329,7 @@ function selectTrack(track) {
     
     // Update display
     elements.songTitle.textContent = track.name;
-    elements.artistName.textContent = track.artist;
+    elements.artistName.textContent = elements.artistOverride.value.trim() || track.artist;
     elements.albumName.textContent = track.album;
     elements.totalTime.textContent = formatTime(track.duration);
     
@@ -400,99 +409,48 @@ function generatePreview() {
 function generateSpotifyPlaqueSVG(data) {
     const currentTime = Math.floor(data.duration * data.progress / 100);
     const totalTime = data.duration;
+    const displayArtist = elements.artistOverride.value.trim() || data.artistName;
     
     return `
-    <svg width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <svg width="300" height="400" viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
         <!-- Background -->
-        <rect width="400" height="600" fill="#000000" rx="20"/>
+        <rect width="300" height="400" fill="#FFFFFF" stroke="#000000" stroke-width="2" rx="10"/>
         
         <!-- Album Cover -->
-        <defs>
-            <clipPath id="coverClip">
-                <rect x="50" y="50" width="300" height="300" rx="15"/>
-            </clipPath>
-        </defs>
-        
-        <image x="50" y="50" width="300" height="300" href="${data.albumCover}" 
-               clip-path="url(#coverClip)" preserveAspectRatio="xMidYMid slice"/>
-        
-        <!-- Cover overlay for rounded corners -->
-        <rect x="50" y="50" width="300" height="300" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1" rx="15"/>
+        <image x="25" y="25" width="250" height="250" href="${data.albumCover}" preserveAspectRatio="xMidYMid slice"/>
         
         <!-- Song Title -->
-        <text x="200" y="390" text-anchor="middle" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="bold">
+        <text x="150" y="300" text-anchor="middle" fill="#000000" font-family="Arial, sans-serif" font-size="18" font-weight="bold">
             ${truncateText(data.songName, 20)}
         </text>
         
         <!-- Artist Name -->
-        <text x="200" y="420" text-anchor="middle" fill="#B3B3B3" font-family="Inter, Arial, sans-serif" font-size="18">
-            ${truncateText(data.artistName, 25)}
-        </text>
-        
-        <!-- Album Name -->
-        <text x="200" y="445" text-anchor="middle" fill="#888888" font-family="Inter, Arial, sans-serif" font-size="14" font-style="italic">
-            ${truncateText(data.albumName, 30)}
+        <text x="150" y="320" text-anchor="middle" fill="#666666" font-family="Arial, sans-serif" font-size="14">
+            ${truncateText(displayArtist, 25)}
         </text>
         
         <!-- Progress Bar Background -->
-        <rect x="50" y="480" width="300" height="4" fill="#404040" rx="2"/>
+        <rect x="25" y="340" width="250" height="4" fill="#CCCCCC" rx="2"/>
         
         <!-- Progress Bar Fill -->
-        <rect x="50" y="480" width="${300 * data.progress / 100}" height="4" fill="#1DB954" rx="2"/>
-        
-        <!-- Progress Dot -->
-        <circle cx="${50 + (300 * data.progress / 100)}" cy="482" r="6" fill="#1DB954"/>
+        <rect x="25" y="340" width="${250 * data.progress / 100}" height="4" fill="#1DB954" rx="2"/>
         
         <!-- Time Display -->
-        <text x="50" y="505" fill="#B3B3B3" font-family="Inter, Arial, sans-serif" font-size="12">
+        <text x="25" y="360" fill="#666666" font-family="Arial, sans-serif" font-size="10">
             ${formatTime(currentTime)}
         </text>
-        <text x="350" y="505" text-anchor="end" fill="#B3B3B3" font-family="Inter, Arial, sans-serif" font-size="12">
+        <text x="275" y="360" text-anchor="end" fill="#666666" font-family="Arial, sans-serif" font-size="10">
             ${formatTime(totalTime)}
         </text>
         
         <!-- Spotify Logo -->
-        <circle cx="80" cy="540" r="20" fill="#1DB954"/>
-        <path d="M70 533c0-1.5 1.2-2.7 2.7-2.7 1.5 0 2.7 1.2 2.7 2.7v14c0 1.5-1.2 2.7-2.7 2.7-1.5 0-2.7-1.2-2.7-2.7v-14z M80 528c1.5 0 2.7 1.2 2.7 2.7v16.6c0 1.5-1.2 2.7-2.7 2.7s-2.7-1.2-2.7-2.7v-16.6c0-1.5 1.2-2.7 2.7-2.7z M90 535c0-1.5 1.2-2.7 2.7-2.7 1.5 0 2.7 1.2 2.7 2.7v10c0 1.5-1.2 2.7-2.7 2.7-1.5 0-2.7-1.2-2.7-2.7v-10z" fill="#000000"/>
-        
-        <!-- QR Code -->
-        <rect x="280" y="515" width="70" height="70" fill="#FFFFFF" stroke="#000000" stroke-width="2" rx="5"/>
-        
-        <!-- QR Code Pattern (simplified) -->
-        <g fill="#000000">
-            <!-- Corner squares -->
-            <rect x="285" y="520" width="15" height="15"/>
-            <rect x="285" y="565" width="15" height="15"/>
-            <rect x="330" y="520" width="15" height="15"/>
-            
-            <!-- Center square -->
-            <rect x="307" y="542" width="6" height="6"/>
-            
-            <!-- Pattern dots -->
-            <rect x="290" y="540" width="2" height="2"/>
-            <rect x="295" y="538" width="2" height="2"/>
-            <rect x="298" y="545" width="2" height="2"/>
-            <rect x="320" y="540" width="2" height="2"/>
-            <rect x="325" y="545" width="2" height="2"/>
-            <rect x="315" y="550" width="2" height="2"/>
-        </g>
+        <circle cx="50" cy="385" r="12" fill="#1DB954"/>
+        <text x="50" y="390" text-anchor="middle" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="12">♫</text>
         
         <!-- Spotify URL -->
-        <text x="200" y="580" text-anchor="middle" fill="#1DB954" font-family="Inter, Arial, sans-serif" font-size="10" text-decoration="underline">
-            ${data.spotifyUrl ? 'Listen on Spotify' : 'Scan to Listen'}
+        <text x="150" y="385" text-anchor="middle" fill="#1DB954" font-family="Arial, sans-serif" font-size="8">
+            Listen on Spotify
         </text>
-        
-        <!-- Subtle shadow effect -->
-        <defs>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="rgba(0,0,0,0.3)"/>
-            </filter>
-        </defs>
-        
-        <!-- Apply shadow to main elements -->
-        <style>
-            .shadow { filter: url(#shadow); }
-        </style>
     </svg>`;
 }
 

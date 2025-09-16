@@ -7,51 +7,57 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
+            --primary-blue: #2563eb;
+            --light-blue: #3b82f6;
+            --pale-blue: #dbeafe;
+            --accent-blue: #1d4ed8;
+            --dark-blue: #1e40af;
             --spotify-green: #1db954;
-            --spotify-green-dark: #1aa34a;
-            --spotify-black: #191414;
-            --spotify-dark: #121212;
-            --spotify-grey: #535353;
-            --spotify-light-grey: #b3b3b3;
-            --spotify-white: #ffffff;
-            --gradient: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+            --white: #ffffff;
+            --light-gray: #f8fafc;
+            --gray: #64748b;
+            --dark-gray: #334155;
+            --border-gray: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
         }
 
         * {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+                background: var(--light-gray);
         }
 
-        body {
+                border: 2px solid var(--border-gray);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-            color: var(--spotify-white);
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.5;
         }
-
+                background: var(--border-gray);
         /* Header */
         .header {
             text-align: center;
             padding: 4rem 2rem;
-            background: linear-gradient(135deg, rgba(29, 185, 84, 0.1) 0%, rgba(18, 18, 18, 0.8) 100%);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(248, 250, 252, 0.9) 100%);
         }
-
+                color: var(--text-primary);
         .header h1 {
             font-size: 4rem;
             font-weight: 800;
             background: var(--gradient);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+                color: var(--text-secondary);
             background-clip: text;
             margin-bottom: 1rem;
             letter-spacing: -0.02em;
         }
 
-        .header p {
+                color: var(--primary-blue);
             font-size: 1.25rem;
-            color: var(--spotify-light-grey);
+            color: var(--text-secondary);
             max-width: 600px;
             margin: 0 auto;
         }
@@ -72,46 +78,54 @@
 
         /* Left Panel */
         .creator-panel {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--white);
+            border: 2px solid var(--border-gray);
             border-radius: 24px;
             padding: 2.5rem;
-            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
         }
 
         .section-title {
             font-size: 1.75rem;
             font-weight: 700;
             margin-bottom: 2rem;
-            color: var(--spotify-white);
+            color: var(--text-primary);
         }
 
         /* Search Section */
         .search-container {
-            position: relative;
-            margin-bottom: 3rem;
+            margin-bottom: 1.5rem;
         }
 
-        .search-input {
+        .search-input, .artist-input {
             width: 100%;
-            background: var(--spotify-black);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50px;
+            background: var(--white);
+            border: 2px solid var(--border-gray);
+            border-radius: 12px;
             padding: 1.25rem 1.75rem;
-            color: var(--spotify-white);
+            color: var(--text-primary);
             font-size: 1.1rem;
             font-weight: 500;
             transition: all 0.3s ease;
+            margin-bottom: 1rem;
         }
 
-        .search-input:focus {
+        .search-input:focus, .artist-input:focus {
             outline: none;
-            border-color: var(--spotify-green);
-            box-shadow: 0 0 0 4px rgba(29, 185, 84, 0.1);
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
         }
 
-        .search-input::placeholder {
-            color: var(--spotify-grey);
+        .search-input::placeholder, .artist-input::placeholder {
+            color: var(--gray);
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
         }
 
         /* Album Preview */
@@ -121,11 +135,11 @@
         }
 
         .album-showcase {
-            background: var(--spotify-black);
+            background: var(--light-gray);
             border-radius: 20px;
             padding: 2.5rem;
             margin-bottom: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-gray);
         }
 
         .album-cover-container {
@@ -137,14 +151,15 @@
             height: 240px;
             margin: 0 auto;
             border-radius: 16px;
-            background: linear-gradient(135deg, var(--spotify-grey), var(--spotify-dark));
+            background: linear-gradient(135deg, var(--pale-blue), var(--border-gray));
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 15px 35px rgba(37, 99, 235, 0.15);
             transition: transform 0.4s ease;
             position: relative;
+            border: 2px solid var(--border-gray);
         }
 
         .album-cover:hover {
@@ -159,7 +174,7 @@
 
         .album-placeholder {
             font-size: 3rem;
-            color: var(--spotify-grey);
+            color: var(--gray);
             opacity: 0.5;
         }
 
@@ -171,35 +186,35 @@
         .song-title {
             font-size: 1.75rem;
             font-weight: 700;
-            color: var(--spotify-white);
+            color: var(--text-primary);
             margin-bottom: 0.75rem;
         }
 
         .artist-name {
             font-size: 1.25rem;
-            color: var(--spotify-light-grey);
+            color: var(--text-secondary);
             margin-bottom: 0.5rem;
         }
 
         .album-name {
             font-size: 1rem;
-            color: var(--spotify-grey);
+            color: var(--gray);
             font-style: italic;
         }
 
         /* Progress Controls */
         .progress-section {
-            background: var(--spotify-black);
+            background: var(--white);
             border-radius: 16px;
             padding: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-gray);
         }
 
         .progress-title {
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 1.5rem;
-            color: var(--spotify-white);
+            color: var(--text-primary);
         }
 
         .progress-bar-wrapper {
@@ -210,7 +225,7 @@
         .progress-track {
             width: 100%;
             height: 8px;
-            background: var(--spotify-grey);
+            background: var(--border-gray);
             border-radius: 4px;
             cursor: pointer;
             position: relative;
@@ -231,9 +246,10 @@
             transform: translateY(-50%);
             width: 16px;
             height: 16px;
-            background: var(--spotify-white);
+            background: var(--white);
+            border: 3px solid var(--primary-blue);
             border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
             cursor: pointer;
         }
 
@@ -242,7 +258,7 @@
             justify-content: space-between;
             margin-top: 0.75rem;
             font-size: 0.9rem;
-            color: var(--spotify-light-grey);
+            color: var(--text-secondary);
         }
 
         /* Action Buttons */
@@ -272,32 +288,32 @@
         .btn-primary {
             background: var(--gradient);
             color: white;
-            box-shadow: 0 6px 20px rgba(29, 185, 84, 0.3);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
         }
 
         .btn-secondary {
-            background: transparent;
-            color: var(--spotify-white);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: var(--white);
+            color: var(--primary-blue);
+            border: 2px solid var(--primary-blue);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: var(--pale-blue);
+            border-color: var(--accent-blue);
         }
 
         /* Right Panel - Cart */
         .cart-panel {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--white);
+            border: 2px solid var(--border-gray);
             border-radius: 24px;
             padding: 2.5rem;
-            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             position: sticky;
             top: 2rem;
             height: fit-content;
@@ -313,10 +329,11 @@
         .cart-title {
             font-size: 1.75rem;
             font-weight: 700;
+            color: var(--text-primary);
         }
 
         .cart-badge {
-            background: var(--spotify-green);
+            background: var(--primary-blue);
             color: white;
             border-radius: 50%;
             width: 32px;
@@ -553,11 +570,21 @@
                 
                 <!-- Search Section -->
                 <div class="search-container">
+                    <label class="input-label">Search for a song</label>
                     <input 
                         type="text" 
                         class="search-input" 
                         id="songSearch"
-                        placeholder="Search for a song or artist..."
+                        placeholder="Enter song name..."
+                        autocomplete="off"
+                    >
+                    
+                    <label class="input-label">Override Artist (Optional)</label>
+                    <input 
+                        type="text" 
+                        class="artist-input" 
+                        id="artistOverride"
+                        placeholder="Leave blank to use original artist..."
                         autocomplete="off"
                     >
                 </div>
