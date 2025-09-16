@@ -28,7 +28,6 @@ let spotifyTokenExpires = localStorage.getItem('spotify_token_expires') || 0;
 // DOM elements
 const elements = {
     songSearch: document.getElementById('songSearch'),
-    artistOverride: document.getElementById('artistOverride'),
     albumCover: document.getElementById('albumCover'),
     songTitle: document.getElementById('songTitle'),
     artistName: document.getElementById('artistName'),
@@ -38,7 +37,6 @@ const elements = {
     progressHandle: document.getElementById('progressHandle'),
     currentTime: document.getElementById('currentTime'),
     totalTime: document.getElementById('totalTime'),
-    previewBtn: document.getElementById('previewBtn'),
     addToCartBtn: document.getElementById('addToCartBtn'),
     svgPreview: document.getElementById('svgPreview'),
     cartBadge: document.getElementById('cartBadge'),
@@ -127,21 +125,11 @@ function setupEventListeners() {
     // Search functionality
     elements.songSearch.addEventListener('input', debounce(handleSearch, 300));
     
-    // Artist input triggers a new search with both song and artist
-    elements.artistOverride.addEventListener('input', debounce(function(e) {
-        const song = elements.songSearch.value.trim();
-        const artist = elements.artistOverride.value.trim();
-        if (song.length > 1) {
-            handleSearch({ target: { value: song } }, artist);
-        }
-    }, 300));
-    
     // Progress bar interaction
     elements.progressTrack.addEventListener('click', handleProgressClick);
     elements.progressHandle.addEventListener('mousedown', handleProgressDragStart);
     
     // Button events
-    elements.previewBtn.addEventListener('click', generatePreview);
     elements.addToCartBtn.addEventListener('click', addToCart);
     elements.checkoutBtn.addEventListener('click', handleCheckout);
 }
@@ -149,13 +137,8 @@ function setupEventListeners() {
 // Search functionality
 function handleSearch(e) {
     const query = e.target.value.trim();
-    const artist = arguments.length > 1 ? arguments[1] : elements.artistOverride.value.trim();
     if (query.length < 2) return;
-    let searchQuery = query;
-    if (artist.length > 0) {
-        searchQuery += ' artist:' + artist;
-    }
-    searchSpotify(searchQuery);
+    searchSpotify(query);
 }
 
 async function searchSpotify(query) {
@@ -354,7 +337,7 @@ function selectTrack(track) {
 
     // Update display
     elements.songTitle.textContent = track.name;
-    elements.artistName.textContent = elements.artistOverride.value.trim() || track.artist;
+    elements.artistName.textContent = track.artist;
     elements.albumName.textContent = track.album;
     elements.totalTime.textContent = formatTime(track.duration);
 
@@ -363,7 +346,7 @@ function selectTrack(track) {
         <div class="svg-outline-wrapper">
             ${generateSpotifyPlaqueSVG({
                 songName: track.name,
-                artistName: elements.artistOverride.value.trim() || track.artist,
+                artistName: track.artist,
                 albumName: track.album,
                 albumCover: track.images[0].url,
                 spotifyUrl: track.external_urls.spotify,
@@ -375,7 +358,6 @@ function selectTrack(track) {
     elements.svgPreview.style.display = 'none';
 
     // Enable buttons
-    elements.previewBtn.disabled = false;
     elements.addToCartBtn.disabled = false;
 
     updateProgressDisplay();
@@ -444,7 +426,7 @@ function generateSpotifyPlaqueSVG(data) {
     // Map frontend data to backend-style metadata
     const metadata = {
         title: data.songName,
-        artist: elements.artistOverride && elements.artistOverride.value.trim() ? elements.artistOverride.value.trim() : data.artistName,
+        artist: data.artistName,
         image: data.albumCover,
         duration: formatTime(data.duration)
     };
