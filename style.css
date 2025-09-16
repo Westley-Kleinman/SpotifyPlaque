@@ -1,0 +1,64 @@
+/* Plaqueify Standalone Stylesheet */
+
+:root {
+    --primary-blue: #2563eb;
+    --light-blue: #3b82f6;
+    --pale-blue: #dbeafe;
+    --accent-blue: #1d4ed8;
+    --dark-blue: #1e40af;
+    --spotify-green: #1db954;
+    --white: #ffffff;
+    --light-gray: #f8fafc;
+    --gray: #64748b;
+    --dark-gray: #334155;
+    --border-gray: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.5;
+}
+
+.header {
+    text-align: center;
+    padding: 4rem 2rem 2rem 2rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(248, 250, 252, 0.9) 100%);
+}
+
+.header h1 {
+    font-size: 4rem;
+    font-weight: 800;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.header .slogan {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.header .sub-slogan {
+    color: var(--primary-blue);
+    font-size: 1.1rem;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+/* ...existing CSS from index.html... */
