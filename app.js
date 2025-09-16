@@ -351,25 +351,30 @@ function fallbackSearch(query) {
 function selectTrack(track) {
     currentTrack = track;
     totalDuration = track.duration;
-    
+
     // Update display
     elements.songTitle.textContent = track.name;
     elements.artistName.textContent = elements.artistOverride.value.trim() || track.artist;
     elements.albumName.textContent = track.album;
     elements.totalTime.textContent = formatTime(track.duration);
-    
-    // Update album cover
-    const coverImg = document.createElement('img');
-    coverImg.src = track.images[0].url;
-    coverImg.alt = `${track.album} cover`;
-    
+
+    // Instead of album cover, show SVG preview in its place
     elements.albumCover.innerHTML = '';
-    elements.albumCover.appendChild(coverImg);
-    
+    elements.svgPreview.innerHTML = generateSpotifyPlaqueSVG({
+        songName: track.name,
+        artistName: elements.artistOverride.value.trim() || track.artist,
+        albumName: track.album,
+        albumCover: track.images[0].url,
+        spotifyUrl: track.external_urls.spotify,
+        progress: currentProgress,
+        duration: totalDuration
+    });
+    elements.svgPreview.style.display = 'block';
+
     // Enable buttons
     elements.previewBtn.disabled = false;
     elements.addToCartBtn.disabled = false;
-    
+
     updateProgressDisplay();
 }
 
@@ -748,47 +753,40 @@ function saveCart() {
 // Checkout
 async function handleCheckout() {
     if (cart.length === 0) return;
-    
     try {
         // Create checkout session
-        const response = await fetch('/create-checkout-session', {
+        const response = await fetch('/api/create-checkout-session', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 items: cart.map(item => ({
-                    track_id: item.track.id,
-                    track_name: item.track.name,
-                    artist_name: item.track.artist,
-                    album_name: item.track.album,
-                    album_cover: item.track.images[0].url,
+                    meta: {
+                        title: item.track.name,
+                        artist: item.track.artist,
+                        image: item.track.images[0].url,
+                        duration: item.track.duration || totalDuration
+                    },
                     progress: item.progress,
-                    price: item.price
+                    size: 'small', // or 'large' if you support multiple sizes
+                    coverUrl: item.track.images[0].url
                 }))
             })
         });
-        
         const session = await response.json();
-        
+        if (!session.id) throw new Error(session.error || 'No session ID returned');
         // Redirect to Stripe Checkout
         const { error } = await stripe.redirectToCheckout({
             sessionId: session.id
         });
-        
         if (error) {
             console.error('Stripe error:', error);
             showNotification('Checkout failed. Please try again.', 'error');
         }
-        
     } catch (error) {
         console.error('Checkout error:', error);
-        
-        // For demo purposes, simulate successful checkout
-        showNotification('Demo: Checkout would redirect to Stripe payment page', 'info');
-        
-        // Send order email (placeholder)
-        sendOrderEmail();
+        showNotification('Checkout failed. Please try again.', 'error');
     }
 }
 
