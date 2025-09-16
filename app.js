@@ -342,25 +342,11 @@ function selectTrack(track) {
     elements.totalTime.textContent = formatTime(track.duration);
 
     // Show SVG preview in the album cover area with a realistic outline
-    elements.albumCover.innerHTML = `
-        <div class="svg-outline-wrapper">
-            ${generateSpotifyPlaqueSVG({
-                songName: track.name,
-                artistName: track.artist,
-                albumName: track.album,
-                albumCover: track.images[0].url,
-                spotifyUrl: track.external_urls.spotify,
-                progress: currentProgress,
-                duration: totalDuration
-            })}
-        </div>
-    `;
-    elements.svgPreview.style.display = 'none';
-
     // Enable buttons
     elements.addToCartBtn.disabled = false;
 
-    updateProgressDisplay();
+    // Update both progress bar and SVG preview
+    updateProgressAndSvg();
 }
 
 // Progress bar functionality
@@ -370,8 +356,7 @@ function handleProgressClick(e) {
     const percentage = (clickX / rect.width) * 100;
     
     currentProgress = Math.max(0, Math.min(100, percentage));
-    updateProgressDisplay();
-    updateSvgPreviewTime();
+    updateProgressAndSvg();
 }
 
 function handleProgressDragStart(e) {
@@ -382,14 +367,18 @@ function handleProgressDragStart(e) {
         const mouseX = e.clientX - rect.left;
         const percentage = (mouseX / rect.width) * 100;
         currentProgress = Math.max(0, Math.min(100, percentage));
-        updateProgressDisplay();
-        updateSvgPreviewTime();
+        updateProgressAndSvg();
     }
-// Update the SVG preview time when progress changes
-function updateSvgPreviewTime() {
-    // If the SVG preview is visible (in album cover area), update it
+// Update both the progress bar and SVG preview so they always match
+function updateProgressAndSvg() {
+    // Update progress bar
+    const percentage = currentProgress;
+    elements.progressFill.style.width = `${percentage}%`;
+    elements.progressHandle.style.left = `${percentage}%`;
+    const currentSeconds = Math.floor(totalDuration * percentage / 100);
+    elements.currentTime.textContent = formatTime(currentSeconds);
+    // Update SVG preview
     if (currentTrack) {
-        // If the SVG is in the album cover area, update that
         elements.albumCover.innerHTML = `
             <div class="svg-outline-wrapper">
                 ${generateSpotifyPlaqueSVG({
@@ -416,12 +405,7 @@ function updateSvgPreviewTime() {
 }
 
 function updateProgressDisplay() {
-    const percentage = currentProgress;
-    elements.progressFill.style.width = `${percentage}%`;
-    elements.progressHandle.style.left = `${percentage}%`;
-    
-    const currentSeconds = Math.floor(totalDuration * percentage / 100);
-    elements.currentTime.textContent = formatTime(currentSeconds);
+    // Deprecated: use updateProgressAndSvg instead
 }
 
 // SVG Generation
