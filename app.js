@@ -107,13 +107,14 @@ function setupEventListeners() {
     // Search functionality
     elements.songSearch.addEventListener('input', debounce(handleSearch, 300));
     
-    // Artist override functionality
-    elements.artistOverride.addEventListener('input', function(e) {
-        if (currentTrack) {
-            const displayArtist = e.target.value.trim() || currentTrack.artist;
-            elements.artistName.textContent = displayArtist;
+    // Artist input triggers a new search with both song and artist
+    elements.artistOverride.addEventListener('input', debounce(function(e) {
+        const song = elements.songSearch.value.trim();
+        const artist = elements.artistOverride.value.trim();
+        if (song.length > 1) {
+            handleSearch({ target: { value: song } }, artist);
         }
-    });
+    }, 300));
     
     // Progress bar interaction
     elements.progressTrack.addEventListener('click', handleProgressClick);
@@ -128,9 +129,13 @@ function setupEventListeners() {
 // Search functionality
 function handleSearch(e) {
     const query = e.target.value.trim();
+    const artist = arguments.length > 1 ? arguments[1] : elements.artistOverride.value.trim();
     if (query.length < 2) return;
-    
-    searchSpotify(query);
+    let searchQuery = query;
+    if (artist.length > 0) {
+        searchQuery += ' artist:' + artist;
+    }
+    searchSpotify(searchQuery);
 }
 
 async function searchSpotify(query) {
