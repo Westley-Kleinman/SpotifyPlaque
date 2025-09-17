@@ -818,8 +818,25 @@ function saveCart() {
 // Checkout
 async function handleCheckout() {
     if (cart.length === 0) return;
-    // Redirect to Stripe Payment Link (client-only, secure)
-    window.location.href = 'https://buy.stripe.com/dRm28s7GM6oPcQQayf0VO00';
+    const links = {
+        1: 'https://buy.stripe.com/7sY5kEbX2eVl7ww9ub0VO02',
+        2: 'https://buy.stripe.com/dRmdRa6CIeVl7wwbCj0VO03',
+        3: 'https://buy.stripe.com/5kQdRa5yE8wX3gggWD0VO04',
+        4: 'https://buy.stripe.com/dRm28s1io3cD044bCj0VO05',
+        5: 'https://buy.stripe.com/cNibJ26CIcNd7wwfSz0VO06',
+        6: 'https://buy.stripe.com/bJecN69OUeVl7wwbCj0VO07',
+        7: 'https://buy.stripe.com/14AbJ2bX228z9EEayf0VO08'
+    };
+    if (cart.length > 7) {
+        showNotification('For orders of more than 7 plaques, please contact Westley.Kleinman@Duke.edu or 501-701-7973 for pricing and info.', 'error');
+        return;
+    }
+    const link = links[cart.length];
+    if (link) {
+        window.location.href = link;
+    } else {
+        showNotification('No payment link available for this quantity. Please contact support.', 'error');
+    }
 }
 
 async function sendOrderEmail() {

@@ -33,45 +33,50 @@ body {
 
 .header {
     text-align: center;
-    padding: 4rem 2rem 2rem 2rem;
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(248, 250, 252, 0.9) 100%);
+    padding: 1rem 1.5rem 0.7rem 1.5rem;
+    background: linear-gradient(120deg, #f8fafc 85%, #e0e7ff 100%);
+    border-radius: 0 0 1rem 1rem;
+    box-shadow: 0 2px 8px 0 rgba(37,99,235,0.04);
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .header h1 {
-    font-size: 4rem;
+    font-size: 2.1rem;
     font-weight: 800;
-    background: var(--gradient);
+    background: linear-gradient(90deg, #2563eb 30%, #6366f1 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.03em;
+    text-shadow: 0 2px 8px rgba(99,102,241,0.08);
 }
 
 .header .slogan {
-    color: var(--text-secondary);
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
+    color: #374151;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 4px rgba(37,99,235,0.04);
 }
 
 .header .sub-slogan {
-    color: var(--primary-blue);
-    font-size: 1.1rem;
-    font-style: italic;
+    display: none;
     margin-bottom: 0.5rem;
 }
 
 .container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 2rem 4rem;
+    padding: 0 2rem 2.5rem;
 }
 
 .main-grid {
     display: grid;
     grid-template-columns: 1fr 400px;
-    gap: 3rem;
-    margin-top: 3rem;
+    gap: 2.2rem;
+    margin-top: 1.2rem;
 }
 
 .creator-panel {
