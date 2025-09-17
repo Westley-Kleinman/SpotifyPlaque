@@ -166,7 +166,10 @@ async function searchSpotify(query) {
         elements.songTitle.textContent = 'Searching...';
         elements.artistName.textContent = 'Please wait...';
         elements.albumName.textContent = '';
-        
+
+        // Debug: show token status
+        console.log('[Plaqueify] Token valid?', hasValidToken(), 'Token:', spotifyAccessToken);
+
         // Ensure we have a valid token; try client-credentials first, then fallback to implicit grant
         if (!hasValidToken()) {
             const ok = await getSpotifyToken();
@@ -177,29 +180,37 @@ async function searchSpotify(query) {
                 return;
             }
         }
-        
+
         // Make API call to Spotify
         let response = await fetch(`${SPOTIFY_CONFIG.API_BASE}/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
             headers: { 'Authorization': `Bearer ${spotifyAccessToken}` }
         });
-        
+
+        // Debug: log response status
+        console.log('[Plaqueify] Spotify search response:', response.status);
+
         if (!response.ok) {
             if (response.status === 401) {
                 // Token expired; refresh with client-credentials and retry once
                 spotifyAccessToken = null;
                 localStorage.removeItem('spotify_access_token');
                 await getSpotifyToken();
-                if (!hasValidToken()) return fallbackSearch(query);
+                if (!hasValidToken()) {
+                    showError('Spotify token expired and could not be refreshed. Please reload and try again.');
+                    return fallbackSearch(query);
+                }
                 response = await fetch(`${SPOTIFY_CONFIG.API_BASE}/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
                     headers: { 'Authorization': `Bearer ${spotifyAccessToken}` }
                 });
                 if (!response.ok) throw new Error(`Spotify API error after refresh: ${response.status}`);
             }
-            throw new Error(`Spotify API error: ${response.status}`);
+            showError('Spotify API error: ' + response.status);
+            return fallbackSearch(query);
         }
-        
+
         const data = await response.json();
-        
+        console.log('[Plaqueify] Spotify search data:', data);
+
         if (data.tracks && data.tracks.items.length > 0) {
             // Use the first search result
             const track = data.tracks.items[0];
@@ -214,16 +225,23 @@ async function searchSpotify(query) {
             });
         } else {
             // No results found
+            showError('No results found for your search. Try a different song or artist.');
             elements.songTitle.textContent = 'No results found';
             elements.artistName.textContent = 'Try a different search term';
             elements.albumName.textContent = '';
         }
-        
+
     } catch (error) {
-        console.error('Spotify search error:', error);
+        console.error('[Plaqueify] Spotify search error:', error);
+        showError('A network or Spotify error occurred. Please try again.');
         // As a last resort, try demo fallback so the UI still works
         fallbackSearch(query);
     }
+function showError(msg) {
+    // Show error in UI and as notification
+    showNotification(msg, 'error');
+    // Optionally, could add a visible error div here
+}
 }
 
 async function getSpotifyAccessToken() {
