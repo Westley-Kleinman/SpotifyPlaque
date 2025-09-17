@@ -375,6 +375,13 @@ function fallbackSearch(query) {
 }
 
 function selectTrack(track) {
+    // Defensive: ensure images[0] and external_urls exist for SVG
+    if (!track.images || !Array.isArray(track.images) || !track.images[0] || !track.images[0].url) {
+        track.images = [{ url: '' }];
+    }
+    if (!track.external_urls || !track.external_urls.spotify) {
+        track.external_urls = { spotify: '' };
+    }
     currentTrack = track;
     totalDuration = track.duration;
 
@@ -384,7 +391,6 @@ function selectTrack(track) {
     elements.albumName.textContent = track.album;
     elements.totalTime.textContent = formatTime(track.duration);
 
-    // Show SVG preview in the album cover area with a realistic outline
     // Enable buttons
     elements.addToCartBtn.disabled = false;
 
@@ -422,14 +428,16 @@ function updateProgressAndSvg() {
     elements.currentTime.textContent = formatTime(currentSeconds);
     // Update SVG preview
     if (currentTrack) {
+        const albumCoverUrl = (currentTrack.images && currentTrack.images[0] && currentTrack.images[0].url) ? currentTrack.images[0].url : '';
+        const spotifyUrl = (currentTrack.external_urls && currentTrack.external_urls.spotify) ? currentTrack.external_urls.spotify : '';
         elements.albumCover.innerHTML = `
             <div class="svg-outline-wrapper">
                 ${generateSpotifyPlaqueSVG({
                     songName: currentTrack.name,
                     artistName: currentTrack.artist,
                     albumName: currentTrack.album,
-                    albumCover: currentTrack.images[0].url,
-                    spotifyUrl: currentTrack.external_urls.spotify,
+                    albumCover: albumCoverUrl,
+                    spotifyUrl: spotifyUrl,
                     progress: currentProgress,
                     duration: totalDuration
                 })}
@@ -475,7 +483,7 @@ function generateSpotifyPlaqueSVG(data) {
     const metadata = {
         title: data.songName,
         artist: data.artistName,
-        image: data.albumCover,
+        image: data.albumCover || '',
         duration: formatTime(data.duration)
     };
     // Use preview mode for client-side SVG
