@@ -433,7 +433,7 @@ function handleProgressClick(e) {
 
 function handleProgressDragStart(e) {
     e.preventDefault();
-    
+
     function handleMouseMove(e) {
         const rect = elements.progressTrack.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -441,6 +441,16 @@ function handleProgressDragStart(e) {
         currentProgress = Math.max(0, Math.min(100, percentage));
         updateProgressAndSvg();
     }
+
+    function handleMouseUp() {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    }
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+}
+
 // Update both the progress bar and SVG preview so they always match
 function updateProgressAndSvg() {
     // Update progress bar
@@ -467,15 +477,6 @@ function updateProgressAndSvg() {
             </div>
         `;
     }
-}
-    
-    function handleMouseUp() {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-    }
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
 }
 
 function updateProgressDisplay() {
