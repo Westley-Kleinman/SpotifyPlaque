@@ -82,8 +82,8 @@ function initializeSpotifyAuth() {
 }
 
 function getRedirectUri() {
-    // Use full path so SPA routes work; must be registered in Spotify Dashboard
-    return window.location.origin + window.location.pathname;
+    // Always use the canonical production domain for Spotify auth
+    return 'https://plaqueify.me/';
 }
 
 function hasValidToken() {
