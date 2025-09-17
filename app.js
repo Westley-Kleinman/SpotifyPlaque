@@ -10,9 +10,12 @@ const CONFIG = {
 
 const SPOTIFY_CONFIG = {
     CLIENT_ID: CONFIG.SPOTIFY_CLIENT_ID,
+    // NOTE: Do NOT use CLIENT_SECRET in the browser. Kept here for historical reasons; unused below.
     CLIENT_SECRET: CONFIG.SPOTIFY_CLIENT_SECRET,
     API_BASE: 'https://api.spotify.com/v1',
-    TOKEN_URL: 'https://accounts.spotify.com/api/token'
+    TOKEN_URL: 'https://accounts.spotify.com/api/token',
+    AUTH_URL: 'https://accounts.spotify.com/authorize',
+    SCOPES: ''
 };
 
 // Global state
@@ -72,39 +75,35 @@ function initializeApp() {
 
 // Spotify Authentication
 function initializeSpotifyAuth() {
-    // Check if we need to get a new token
-    if (!spotifyAccessToken || Date.now() > spotifyTokenExpires) {
+    // Ensure we have a token on load (client-credentials, accepted risk)
+    if (!hasValidToken()) {
         getSpotifyToken();
     }
 }
 
-function getSpotifyToken() {
-    // Use Spotify's Client Credentials flow (insecure for public, but OK for personal use)
-    const clientId = SPOTIFY_CONFIG.CLIENT_ID;
-    const clientSecret = SPOTIFY_CONFIG.CLIENT_SECRET;
-    const basicAuth = btoa(`${clientId}:${clientSecret}`);
-    fetch(SPOTIFY_CONFIG.TOKEN_URL, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Basic ${basicAuth}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: 'grant_type=client_credentials'
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.access_token) {
-            spotifyAccessToken = data.access_token;
-            spotifyTokenExpires = Date.now() + (data.expires_in * 1000) - 60000; // 1 min early
-            localStorage.setItem('spotify_access_token', spotifyAccessToken);
-            localStorage.setItem('spotify_token_expires', spotifyTokenExpires);
-        } else {
-            alert('Failed to get Spotify token.');
-        }
-    })
-    .catch(err => {
-        alert('Spotify token error: ' + err);
+function getRedirectUri() {
+    // Use full path so SPA routes work; must be registered in Spotify Dashboard
+    return window.location.origin + window.location.pathname;
+}
+
+function hasValidToken() {
+    if (!spotifyAccessToken) return false;
+    const exp = Number(localStorage.getItem('spotify_token_expires')) || 0;
+    return Date.now() < exp;
+}
+
+function loginWithSpotify() {
+    const state = Math.random().toString(36).slice(2);
+    sessionStorage.setItem('spotify_auth_state', state);
+    const params = new URLSearchParams({
+        client_id: SPOTIFY_CONFIG.CLIENT_ID,
+        response_type: 'token',
+        redirect_uri: getRedirectUri(),
+        scope: SPOTIFY_CONFIG.SCOPES,
+        state,
+        show_dialog: 'false'
     });
+    window.location.href = `${SPOTIFY_CONFIG.AUTH_URL}?${params.toString()}`;
 }
 
 function handleSpotifyCallback() {
@@ -112,10 +111,23 @@ function handleSpotifyCallback() {
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
     const accessToken = params.get('access_token');
+    const expiresIn = params.get('expires_in');
+    const state = params.get('state');
     
     if (accessToken) {
+        // Optional state validation
+        const expected = sessionStorage.getItem('spotify_auth_state');
+        if (expected && state && expected !== state) {
+            console.warn('Spotify state mismatch; ignoring token');
+            return;
+        }
         spotifyAccessToken = accessToken;
         localStorage.setItem('spotify_access_token', accessToken);
+        if (expiresIn) {
+            spotifyTokenExpires = Date.now() + (parseInt(expiresIn, 10) * 1000) - 60000;
+            localStorage.setItem('spotify_token_expires', spotifyTokenExpires);
+        }
+        sessionStorage.removeItem('spotify_auth_state');
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -148,29 +160,30 @@ async function searchSpotify(query) {
         elements.artistName.textContent = 'Please wait...';
         elements.albumName.textContent = '';
         
-        // Try to get access token if we don't have one
-        if (!spotifyAccessToken) {
-            await getSpotifyAccessToken();
+        // Ensure we have a valid token; try to fetch if missing/expired (no redirect)
+        if (!hasValidToken()) {
+            await getSpotifyToken();
         }
-        
-        // If we still don't have a token, use fallback search
-        if (!spotifyAccessToken) {
+        if (!hasValidToken()) {
             return fallbackSearch(query);
         }
         
         // Make API call to Spotify
-        const response = await fetch(`${SPOTIFY_CONFIG.API_BASE}/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
-            headers: {
-                'Authorization': `Bearer ${spotifyAccessToken}`
-            }
+        let response = await fetch(`${SPOTIFY_CONFIG.API_BASE}/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
+            headers: { 'Authorization': `Bearer ${spotifyAccessToken}` }
         });
         
         if (!response.ok) {
             if (response.status === 401) {
-                // Token expired, clear it and try fallback
+                // Token expired; refresh with client-credentials and retry once
                 spotifyAccessToken = null;
                 localStorage.removeItem('spotify_access_token');
-                return fallbackSearch(query);
+                await getSpotifyToken();
+                if (!hasValidToken()) return fallbackSearch(query);
+                response = await fetch(`${SPOTIFY_CONFIG.API_BASE}/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
+                    headers: { 'Authorization': `Bearer ${spotifyAccessToken}` }
+                });
+                if (!response.ok) throw new Error(`Spotify API error after refresh: ${response.status}`);
             }
             throw new Error(`Spotify API error: ${response.status}`);
         }
@@ -198,25 +211,43 @@ async function searchSpotify(query) {
         
     } catch (error) {
         console.error('Spotify search error:', error);
+        // As a last resort, try demo fallback so the UI still works
         fallbackSearch(query);
     }
 }
 
 async function getSpotifyAccessToken() {
-    try {
-        // For client-side apps, we need to use a different approach
-        // This is a simplified version - in production, you'd want to use your backend
-        
-        // Using the implicit grant flow would require user login
-        // For now, we'll implement a fallback system
-        console.log('Would initiate Spotify OAuth flow here');
-        
-        // You can implement the OAuth flow like this:
-        // window.location.href = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(SPOTIFY_CONFIG.REDIRECT_URI)}&scope=${encodeURIComponent(SPOTIFY_CONFIG.SCOPES)}&response_type=token`;
-        
-    } catch (error) {
-        console.error('Error getting Spotify token:', error);
-    }
+    // For compatibility: same as getSpotifyToken (client credentials)
+    return getSpotifyToken();
+}
+
+function getSpotifyToken() {
+    // Use Spotify's Client Credentials flow (EXPOSES SECRET; user accepts risk)
+    const clientId = SPOTIFY_CONFIG.CLIENT_ID;
+    const clientSecret = SPOTIFY_CONFIG.CLIENT_SECRET;
+    const basicAuth = btoa(`${clientId}:${clientSecret}`);
+    return fetch(SPOTIFY_CONFIG.TOKEN_URL, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${basicAuth}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'grant_type=client_credentials'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.access_token) {
+            spotifyAccessToken = data.access_token;
+            spotifyTokenExpires = Date.now() + (data.expires_in * 1000) - 60000; // 1 min early
+            localStorage.setItem('spotify_access_token', spotifyAccessToken);
+            localStorage.setItem('spotify_token_expires', spotifyTokenExpires);
+        } else {
+            console.warn('Failed to get Spotify token.', data);
+        }
+    })
+    .catch(err => {
+        console.warn('Spotify token error: ' + err);
+    });
 }
 
 function fallbackSearch(query) {
