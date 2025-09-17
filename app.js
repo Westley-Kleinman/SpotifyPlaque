@@ -75,7 +75,7 @@ function initializeApp() {
 
 // Spotify Authentication
 function initializeSpotifyAuth() {
-    // Ensure we have a token on load (client-credentials, accepted risk)
+    // Attempt background token fetch; if it fails, we'll fallback on demand
     if (!hasValidToken()) {
         getSpotifyToken();
     }
@@ -130,6 +130,13 @@ function handleSpotifyCallback() {
         sessionStorage.removeItem('spotify_auth_state');
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
+
+        // Resume pending search if any
+        const pending = sessionStorage.getItem('pending_search_query');
+        if (pending) {
+            sessionStorage.removeItem('pending_search_query');
+            searchSpotify(pending);
+        }
     }
 }
 
@@ -160,12 +167,15 @@ async function searchSpotify(query) {
         elements.artistName.textContent = 'Please wait...';
         elements.albumName.textContent = '';
         
-        // Ensure we have a valid token; try to fetch if missing/expired (no redirect)
+        // Ensure we have a valid token; try client-credentials first, then fallback to implicit grant
         if (!hasValidToken()) {
-            await getSpotifyToken();
-        }
-        if (!hasValidToken()) {
-            return fallbackSearch(query);
+            const ok = await getSpotifyToken();
+            if (!ok) {
+                // Persist query so we can resume after auth
+                sessionStorage.setItem('pending_search_query', query);
+                loginWithSpotify();
+                return;
+            }
         }
         
         // Make API call to Spotify
@@ -241,12 +251,14 @@ function getSpotifyToken() {
             spotifyTokenExpires = Date.now() + (data.expires_in * 1000) - 60000; // 1 min early
             localStorage.setItem('spotify_access_token', spotifyAccessToken);
             localStorage.setItem('spotify_token_expires', spotifyTokenExpires);
-        } else {
-            console.warn('Failed to get Spotify token.', data);
+            return true;
         }
+        console.warn('Failed to get Spotify token.', data);
+        return false;
     })
     .catch(err => {
-        console.warn('Spotify token error: ' + err);
+        console.warn('Spotify token error (likely CORS in browser): ' + err);
+        return false;
     });
 }
 
