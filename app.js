@@ -237,9 +237,14 @@ async function searchSpotify(query) {
         // As a last resort, try demo fallback so the UI still works
         fallbackSearch(query);
     }
-function showError(msg) {
+function showError(msg, details) {
     // Show error in UI and as notification
-    showNotification(msg, 'error');
+    let fullMsg = msg;
+    if (details) {
+        fullMsg += '\nDetails: ' + (typeof details === 'string' ? details : JSON.stringify(details));
+        console.error('[Plaqueify] Error details:', details);
+    }
+    showNotification(fullMsg, 'error');
     // Optionally, could add a visible error div here
 }
 }
@@ -345,7 +350,7 @@ function fallbackSearch(query) {
             album: 'Speak Now (Taylor\'s Version)',
             duration: 235,
             images: [
-                { url: 'https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5' }
+                { url: 'https://i.scdn.co/image/ab67616d0000b273b4b7b4b4b4b4b4b4b4b4b4b4' }
             ],
             external_urls: { spotify: 'https://open.spotify.com/track/1dGr1c8CrMLDpV6mPbImSI' }
         }
