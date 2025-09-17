@@ -818,41 +818,8 @@ function saveCart() {
 // Checkout
 async function handleCheckout() {
     if (cart.length === 0) return;
-    try {
-        // Create checkout session
-        const response = await fetch('/api/create-checkout-session', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                items: cart.map(item => ({
-                    meta: {
-                        title: item.track.name,
-                        artist: item.track.artist,
-                        image: item.track.images[0].url,
-                        duration: item.track.duration || totalDuration
-                    },
-                    progress: item.progress,
-                    size: 'small', // or 'large' if you support multiple sizes
-                    coverUrl: item.track.images[0].url
-                }))
-            })
-        });
-        const session = await response.json();
-        if (!session.id) throw new Error(session.error || 'No session ID returned');
-        // Redirect to Stripe Checkout
-        const { error } = await stripe.redirectToCheckout({
-            sessionId: session.id
-        });
-        if (error) {
-            console.error('Stripe error:', error);
-            showNotification('Checkout failed. Please try again.', 'error');
-        }
-    } catch (error) {
-        console.error('Checkout error:', error);
-        showNotification('Checkout failed. Please try again.', 'error');
-    }
+    // Redirect to Stripe Payment Link (client-only, secure)
+    window.location.href = 'https://buy.stripe.com/dRm28s7GM6oPcQQayf0VO00';
 }
 
 async function sendOrderEmail() {
