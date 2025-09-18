@@ -1,3 +1,47 @@
+@media (max-width: 600px) {
+    .header {
+        padding: 1rem 0.5rem 0.5rem 0.5rem;
+        border-radius: 0 0 0.5rem 0.5rem;
+    }
+    .header h1 {
+        font-size: 1.3rem;
+    }
+    .header .slogan {
+        font-size: 0.85rem;
+    }
+    .container {
+        padding: 0 0.2rem 1.2rem;
+    }
+    .main-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+    .creator-panel, .cart-panel {
+        padding: 0.7rem;
+        border-radius: 12px;
+    }
+    .album-cover-large {
+        width: 120px;
+        height: 120px;
+        min-width: 120px;
+        min-height: 120px;
+    }
+    .svg-preview {
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
+    .cart-item-image {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+    }
+    .checkout-btn {
+        padding: 1rem;
+        font-size: 1rem;
+        border-radius: 30px;
+    }
+}
 /* Plaqueify Standalone Stylesheet - FULL RESTORE */
 
 :root {

@@ -1,23 +1,23 @@
 // Configuration
-const CONFIG = {
-    STRIPE_PUBLISHABLE_KEY: 'pk_live_51RNeOtJC2sHLBdH8nQ1YgyeBJ7EgzZIYnNvP5ceaIOo5u59YJ0c0uiekDVVPDLTODpKRnuORTviYt7o9W7q8vwOg00p07VBlqy',
-    EMAILJS_SERVICE_ID: 'YOUR_SERVICE_ID',
-    EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID', 
-    EMAILJS_PUBLIC_KEY: 'YOUR_PUBLIC_KEY',
-    SPOTIFY_CLIENT_ID: '362a6b4f86a34a8bb2cba6ec127d4a9b',
-    SPOTIFY_CLIENT_SECRET: '078083103aa74598bf03b0eea14846e7'
-};
-
-const SPOTIFY_CONFIG = {
-    CLIENT_ID: CONFIG.SPOTIFY_CLIENT_ID,
-    // NOTE: Do NOT use CLIENT_SECRET in the browser. Kept here for historical reasons; unused below.
-    CLIENT_SECRET: CONFIG.SPOTIFY_CLIENT_SECRET,
-    API_BASE: 'https://api.spotify.com/v1',
-    TOKEN_URL: 'https://accounts.spotify.com/api/token',
-    AUTH_URL: 'https://accounts.spotify.com/authorize',
-    SCOPES: ''
-};
-
+    const links = {
+        1: { url: 'https://buy.stripe.com/7sY5kEbX2eVl7ww9ub0VO02', price: 20.00 },
+        2: { url: 'https://buy.stripe.com/dRmdRa6CIeVl7wwbCj0VO03', price: 40.00 },
+        3: { url: 'https://buy.stripe.com/5kQdRa5yE8wX3gggWD0VO04', price: 50.00 },
+        4: { url: 'https://buy.stripe.com/dRm28s1io3cD044bCj0VO05', price: 65.00 },
+        5: { url: 'https://buy.stripe.com/cNibJ26CIcNd7wwfSz0VO06', price: 80.00 },
+        6: { url: 'https://buy.stripe.com/bJecN69OUeVl7wwbCj0VO07', price: 95.00 },
+        7: { url: 'https://buy.stripe.com/14AbJ2bX228z9EEayf0VO08', price: 110.00 }
+    };
+    if (cart.length > 7) {
+        showNotification('For orders of more than 7 plaques, please contact Westley.Kleinman@Duke.edu or 501-701-7973 for pricing and info.', 'error');
+        return;
+    }
+    const linkObj = links[cart.length];
+    if (linkObj && linkObj.url) {
+        window.location.href = linkObj.url;
+    } else {
+        showNotification('No payment link available for this quantity. Please contact support.', 'error');
+    }
 // Global state
 let currentTrack = null;
 let coverOptions = [];
@@ -212,8 +212,19 @@ async function searchSpotify(query) {
         console.log('[Plaqueify] Spotify search data:', data);
 
         if (data.tracks && data.tracks.items.length > 0) {
-            // Use the first search result
-            const track = data.tracks.items[0];
+            // Prefer most popular track for ambiguous queries
+            let track = data.tracks.items[0];
+            // Special handling for 'this love' to prefer Maroon 5 or Taylor Swift
+            if (query.trim().toLowerCase() === 'this love') {
+                const maroon5 = data.tracks.items.find(t => t.artists.some(a => a.name.toLowerCase().includes('maroon 5')));
+                const taylor = data.tracks.items.find(t => t.artists.some(a => a.name.toLowerCase().includes('taylor swift')));
+                // Prefer Maroon 5, then Taylor Swift, then most popular
+                if (maroon5) track = maroon5;
+                else if (taylor) track = taylor;
+            } else {
+                // For other ambiguous queries, pick the highest popularity
+                track = data.tracks.items.reduce((a, b) => (b.popularity > a.popularity ? b : a), data.tracks.items[0]);
+            }
             selectTrack({
                 id: track.id,
                 name: track.name,
@@ -803,11 +814,21 @@ function updateCartDisplay() {
     `).join('');
     
     // Update summary
-    const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
-    const total = subtotal + 4.99; // Shipping
-    
-    elements.subtotal.textContent = `$${subtotal.toFixed(2)}`;
-    elements.total.textContent = `$${total.toFixed(2)}`;
+    let price = 0;
+    const priceMap = {
+        1: 29.99,
+        2: 54.99,
+        3: 79.99,
+        4: 104.99,
+        5: 129.99,
+        6: 154.99,
+        7: 179.99
+    };
+    if (cart.length > 0 && cart.length <= 7) {
+        price = priceMap[cart.length];
+    }
+    elements.subtotal.textContent = `$${price.toFixed(2)}`;
+    elements.total.textContent = `$${price.toFixed(2)}`;
     elements.cartSummary.style.display = 'block';
 }
 
