@@ -1,23 +1,3 @@
-// Configuration
-    const links = {
-        1: { url: 'https://buy.stripe.com/7sY5kEbX2eVl7ww9ub0VO02', price: 20.00 },
-        2: { url: 'https://buy.stripe.com/dRmdRa6CIeVl7wwbCj0VO03', price: 40.00 },
-        3: { url: 'https://buy.stripe.com/5kQdRa5yE8wX3gggWD0VO04', price: 50.00 },
-        4: { url: 'https://buy.stripe.com/dRm28s1io3cD044bCj0VO05', price: 65.00 },
-        5: { url: 'https://buy.stripe.com/cNibJ26CIcNd7wwfSz0VO06', price: 80.00 },
-        6: { url: 'https://buy.stripe.com/bJecN69OUeVl7wwbCj0VO07', price: 95.00 },
-        7: { url: 'https://buy.stripe.com/14AbJ2bX228z9EEayf0VO08', price: 110.00 }
-    };
-    if (cart.length > 7) {
-        showNotification('For orders of more than 7 plaques, please contact Westley.Kleinman@Duke.edu or 501-701-7973 for pricing and info.', 'error');
-        return;
-    }
-    const linkObj = links[cart.length];
-    if (linkObj && linkObj.url) {
-        window.location.href = linkObj.url;
-    } else {
-        showNotification('No payment link available for this quantity. Please contact support.', 'error');
-    }
 // Global state
 let currentTrack = null;
 let coverOptions = [];
