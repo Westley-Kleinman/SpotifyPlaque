@@ -211,17 +211,25 @@ async function searchSpotify(query) {
         console.log('[Plaqueify] Spotify search data:', data);
 
         if (data.tracks && data.tracks.items.length > 0) {
-            // Prefer most popular track for ambiguous queries
-            let track = data.tracks.items[0];
+            // Prefer exact or close title match, then most popular
+            const queryLower = query.trim().toLowerCase();
+            let track = null;
             // Special handling for 'this love' to prefer Maroon 5 or Taylor Swift
-            if (query.trim().toLowerCase() === 'this love') {
+            if (queryLower === 'this love') {
                 const maroon5 = data.tracks.items.find(t => t.artists.some(a => a.name.toLowerCase().includes('maroon 5')));
                 const taylor = data.tracks.items.find(t => t.artists.some(a => a.name.toLowerCase().includes('taylor swift')));
-                // Prefer Maroon 5, then Taylor Swift, then most popular
                 if (maroon5) track = maroon5;
                 else if (taylor) track = taylor;
-            } else {
-                // For other ambiguous queries, pick the highest popularity
+            }
+            // Try to find an exact or close title match
+            if (!track) {
+                track = data.tracks.items.find(t => t.name.toLowerCase() === queryLower);
+            }
+            if (!track) {
+                track = data.tracks.items.find(t => t.name.toLowerCase().includes(queryLower));
+            }
+            // Fallback to most popular
+            if (!track) {
                 track = data.tracks.items.reduce((a, b) => (b.popularity > a.popularity ? b : a), data.tracks.items[0]);
             }
             selectTrack({
