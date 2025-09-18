@@ -148,7 +148,27 @@ function setupEventListeners() {
     elements.progressHandle.addEventListener('mousedown', handleProgressDragStart);
     
     // Button events
-    elements.addToCartBtn.addEventListener('click', addToCart);
+    // Update Add to Cart button price label
+    function updateAddToCartBtn() {
+        const priceMap = {
+            1: 20.00,
+            2: 40.00,
+            3: 50.00,
+            4: 65.00,
+            5: 80.00,
+            6: 95.00,
+            7: 110.00
+        };
+        const nextQty = cart.length + 1;
+        const price = priceMap[nextQty] || priceMap[7];
+        elements.addToCartBtn.textContent = `Add to Cart ($${price.toFixed(2)})`;
+    }
+    elements.addToCartBtn.addEventListener('click', function() {
+        addToCart();
+        updateAddToCartBtn();
+    });
+    updateAddToCartBtn();
+    window.updateAddToCartBtn = updateAddToCartBtn;
     elements.checkoutBtn.addEventListener('click', handleCheckout);
 }
 
@@ -769,25 +789,35 @@ function truncateText(text, maxLength) {
 function addToCart() {
     if (!currentTrack) return;
     
+    // Price for the next item (cart.length + 1)
+    const priceMap = {
+        1: 20.00,
+        2: 40.00,
+        3: 50.00,
+        4: 65.00,
+        5: 80.00,
+        6: 95.00,
+        7: 110.00
+    };
+    const nextQty = cart.length + 1;
+    const price = priceMap[nextQty] || priceMap[7];
     const cartItem = {
         id: Date.now(),
         track: currentTrack,
         progress: currentProgress,
-        price: 24.99
+        price: price
     };
-    
     cart.push(cartItem);
     saveCart();
     updateCartDisplay();
-    
-    // Show success message
-    showNotification('Added to cart!', 'success');
+    showNotification(`Added to cart! ($${price.toFixed(2)})`, 'success');
 }
 
 function removeFromCart(itemId) {
     cart = cart.filter(item => item.id !== itemId);
     saveCart();
     updateCartDisplay();
+    if (typeof window.updateAddToCartBtn === 'function') window.updateAddToCartBtn();
 }
 
 function updateCartDisplay() {
@@ -823,13 +853,13 @@ function updateCartDisplay() {
     // Update summary
     let price = 0;
     const priceMap = {
-        1: 29.99,
-        2: 54.99,
-        3: 79.99,
-        4: 104.99,
-        5: 129.99,
-        6: 154.99,
-        7: 179.99
+        1: 20.00,
+        2: 40.00,
+        3: 50.00,
+        4: 65.00,
+        5: 80.00,
+        6: 95.00,
+        7: 110.00
     };
     if (cart.length > 0 && cart.length <= 7) {
         price = priceMap[cart.length];
