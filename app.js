@@ -1,3 +1,22 @@
+// Configuration
+const CONFIG = {
+    STRIPE_PUBLISHABLE_KEY: 'pk_live_51RNeOtJC2sHLBdH8nQ1YgyeBJ7EgzZIYnNvP5ceaIOo5u59YJ0c0uiekDVVPDLTODpKRnuORTviYt7o9W7q8vwOg00p07VBlqy',
+    EMAILJS_SERVICE_ID: 'YOUR_SERVICE_ID',
+    EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID',
+    EMAILJS_PUBLIC_KEY: 'YOUR_PUBLIC_KEY',
+    SPOTIFY_CLIENT_ID: '362a6b4f86a34a8bb2cba6ec127d4a9b',
+    SPOTIFY_CLIENT_SECRET: '078083103aa74598bf03b0eea14846e7'
+};
+
+const SPOTIFY_CONFIG = {
+    CLIENT_ID: CONFIG.SPOTIFY_CLIENT_ID,
+    // NOTE: Do NOT use CLIENT_SECRET in the browser. Kept here for historical reasons; unused below.
+    CLIENT_SECRET: CONFIG.SPOTIFY_CLIENT_SECRET,
+    API_BASE: 'https://api.spotify.com/v1',
+    TOKEN_URL: 'https://accounts.spotify.com/api/token',
+    AUTH_URL: 'https://accounts.spotify.com/authorize',
+    SCOPES: ''
+};
 // Global state
 let currentTrack = null;
 let coverOptions = [];
