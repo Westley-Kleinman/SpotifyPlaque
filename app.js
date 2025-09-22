@@ -150,17 +150,16 @@ function setupEventListeners() {
     // Button events
     // Update Add to Cart button price label
     function updateAddToCartBtn() {
+        // Update for 10-item threshold and 4 new Stripe links
         const priceMap = {
             1: 20.00,
-            2: 40.00,
-            3: 50.00,
-            4: 65.00,
-            5: 80.00,
-            6: 95.00,
-            7: 110.00
+            2: 38.00,
+            3: 54.00,
+            4: 68.00
         };
         const nextQty = cart.length + 1;
-        const price = priceMap[nextQty] || priceMap[7];
+        // For quantities above 4, use the last price (or show contact message elsewhere)
+        const price = priceMap[nextQty] || priceMap[4];
         elements.addToCartBtn.textContent = `Add to Cart ($${price.toFixed(2)})`;
     }
     elements.addToCartBtn.addEventListener('click', function() {
@@ -878,15 +877,13 @@ async function handleCheckout() {
     if (cart.length === 0) return;
     const links = {
         1: 'https://buy.stripe.com/7sY5kEbX2eVl7ww9ub0VO02',
-        2: 'https://buy.stripe.com/dRmdRa6CIeVl7wwbCj0VO03',
-        3: 'https://buy.stripe.com/5kQdRa5yE8wX3gggWD0VO04',
-        4: 'https://buy.stripe.com/dRm28s1io3cD044bCj0VO05',
-        5: 'https://buy.stripe.com/cNibJ26CIcNd7wwfSz0VO06',
-        6: 'https://buy.stripe.com/bJecN69OUeVl7wwbCj0VO07',
-        7: 'https://buy.stripe.com/14AbJ2bX228z9EEayf0VO08'
+        2: 'https://buy.stripe.com/7sYdRa3qw8wXcQQbCj0VO0a',
+        3: 'https://buy.stripe.com/9B65kEd167sT044ayf0VO0b',
+        4: 'https://buy.stripe.com/14A6oId16fZpbMM49R0VO0c'
     };
-    if (cart.length > 7) {
-        showNotification('For orders of more than 7 plaques, please contact Westley.Kleinman@Duke.edu or 501-701-7973 for pricing and info.', 'error');
+    // Notify users when quantity is above 4 (only 4 Stripe links provided)
+    if (cart.length > 4) {
+        showNotification('For orders of more than 4 plaques, please contact Westley.Kleinman@Duke.edu or 501-701-7973 for pricing and info.', 'error');
         return;
     }
     const link = links[cart.length];
