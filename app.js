@@ -854,11 +854,9 @@ function updateCartDisplay() {
     const priceMap = {
         1: 20.00,
         2: 40.00,
-        3: 50.00,
-        4: 65.00,
-        5: 80.00,
-        6: 95.00,
-        7: 110.00
+        3: 60.00,
+        4: 80.00,
+    
     };
     if (cart.length > 0 && cart.length <= 7) {
         price = priceMap[cart.length];
